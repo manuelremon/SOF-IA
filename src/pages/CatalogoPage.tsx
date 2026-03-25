@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Title, Stack, SimpleGrid, TextInput, Select, Group } from '@mantine/core'
+import { Title, Stack, TextInput, Select, Group, Table, Badge, Text } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
-import ProductCard from '../components/catalog/ProductCard'
 import type { Product, Category } from '../types'
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
 
 export default function CatalogoPage(): JSX.Element {
   const [products, setProducts] = useState<Product[]>([])
@@ -37,11 +39,40 @@ export default function CatalogoPage(): JSX.Element {
           w={200}
         />
       </Group>
-      <SimpleGrid cols={{ base: 2, sm: 3, md: 4, lg: 5 }}>
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
-      </SimpleGrid>
+      <Table striped highlightOnHover withTableBorder withColumnBorders>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Producto</Table.Th>
+            <Table.Th>Categoría</Table.Th>
+            <Table.Th>Código</Table.Th>
+            <Table.Th style={{ textAlign: 'right' }}>Precio</Table.Th>
+            <Table.Th style={{ textAlign: 'center' }}>Stock</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {products.map((p) => (
+            <Table.Tr key={p.id}>
+              <Table.Td>
+                <Text fw={600} size="sm">{p.name}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm" c="dimmed">{p.categoryName || '—'}</Text>
+              </Table.Td>
+              <Table.Td>
+                <Text size="sm" c="dimmed">{p.barcode || p.sku || '—'}</Text>
+              </Table.Td>
+              <Table.Td style={{ textAlign: 'right' }}>
+                <Text fw={700} size="sm">{fmt(p.salePrice)}</Text>
+              </Table.Td>
+              <Table.Td style={{ textAlign: 'center' }}>
+                <Badge size="sm" color={p.stock > 0 ? 'green' : 'red'} variant="light">
+                  {p.stock > 0 ? p.stock : 'Sin stock'}
+                </Badge>
+              </Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
     </Stack>
   )
 }

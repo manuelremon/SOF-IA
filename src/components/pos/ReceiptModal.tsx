@@ -22,6 +22,11 @@ export default function ReceiptModal({ opened, onClose, sale }: ReceiptModalProp
         <Text ta="center" size="xs" c="dimmed">
           {sale.createdAt?.slice(0, 16)}
         </Text>
+        {sale.customerName && (
+          <Text ta="center" size="sm">
+            Cliente: {sale.customerName}
+          </Text>
+        )}
         <Divider />
         <Table>
           <Table.Thead>
@@ -34,7 +39,14 @@ export default function ReceiptModal({ opened, onClose, sale }: ReceiptModalProp
           <Table.Tbody>
             {sale.items?.map((item: any) => (
               <Table.Tr key={item.id}>
-                <Table.Td>{item.productName}</Table.Td>
+                <Table.Td>
+                  {item.productName}
+                  {item.discountTotal > 0 && (
+                    <Text size="xs" c="orange">
+                      Dto: -{fmt(item.discountTotal)}
+                    </Text>
+                  )}
+                </Table.Td>
                 <Table.Td ta="right">{item.quantity}</Table.Td>
                 <Table.Td ta="right">{fmt(item.lineTotal)}</Table.Td>
               </Table.Tr>
@@ -46,6 +58,12 @@ export default function ReceiptModal({ opened, onClose, sale }: ReceiptModalProp
           <Text>Subtotal:</Text>
           <Text>{fmt(sale.subtotal)}</Text>
         </Group>
+        {sale.discountTotal > 0 && (
+          <Group justify="space-between">
+            <Text c="orange">Descuento:</Text>
+            <Text c="orange">-{fmt(sale.discountTotal)}</Text>
+          </Group>
+        )}
         {sale.taxTotal > 0 && (
           <Group justify="space-between">
             <Text>IVA:</Text>

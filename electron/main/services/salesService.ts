@@ -13,22 +13,62 @@ export function completeSale(data: {
     productName: string
     quantity: number
     unitPrice: number
+    discountType?: string | null
+    discountValue?: number
   }>
+  discountType?: string | null
+  discountValue?: number
   notes?: string
 }) {
   const db = getDb()
   const receiptNumber = generateReceiptNumber()
 
+  // Compute line totals with per-item discounts
   let subtotal = 0
   const computedItems = data.items.map((item) => {
-    const lineTotal = item.quantity * item.unitPrice
+    const gross = item.quantity * item.unitPrice
+    let itemDiscountTotal = 0
+    if (item.discountType === 'porcentaje' && item.discountValue) {
+      itemDiscountTotal = gross * (item.discountValue / 100)
+    } else if (item.discountType === 'monto' && item.discountValue) {
+      itemDiscountTotal = Math.min(item.discountValue, gross)
+    }
+    const lineTotal = gross - itemDiscountTotal
     subtotal += lineTotal
-    return { ...item, lineTotal }
+    return {
+      ...item,
+      discountType: item.discountType ?? null,
+      discountValue: item.discountValue ?? 0,
+      discountTotal: itemDiscountTotal,
+      lineTotal
+    }
   })
 
-  const taxTotal = subtotal * (data.taxRate / 100)
-  const total = subtotal + taxTotal
+  // Compute general discount on subtotal
+  let saleDiscountTotal = 0
+  if (data.discountType === 'porcentaje' && data.discountValue) {
+    saleDiscountTotal = subtotal * (data.discountValue / 100)
+  } else if (data.discountType === 'monto' && data.discountValue) {
+    saleDiscountTotal = Math.min(data.discountValue, subtotal)
+  }
+
+  const subtotalAfterDiscount = subtotal - saleDiscountTotal
+  const taxTotal = subtotalAfterDiscount * (data.taxRate / 100)
+  const total = subtotalAfterDiscount + taxTotal
   const change = data.paymentMethod === 'efectivo' ? Math.max(0, data.amountTendered - total) : 0
+
+  // Validate stock before starting transaction
+  for (const item of data.items) {
+    const product = db
+      .select({ stock: schema.products.stock, name: schema.products.name })
+      .from(schema.products)
+      .where(eq(schema.products.id, item.productId))
+      .get()
+    if (!product) throw new Error(`Producto no encontrado: ${item.productName}`)
+    if (product.stock < item.quantity) {
+      throw new Error(`Stock insuficiente para "${product.name}": disponible ${product.stock}, solicitado ${item.quantity}`)
+    }
+  }
 
   const result = getSqlite().transaction(() => {
     const sale = db
@@ -38,6 +78,9 @@ export function completeSale(data: {
         customerId: data.customerId ?? null,
         receiptNumber,
         subtotal,
+        discountType: data.discountType ?? null,
+        discountValue: data.discountValue ?? 0,
+        discountTotal: saleDiscountTotal,
         taxTotal,
         total,
         amountTendered: data.amountTendered,
@@ -58,6 +101,9 @@ export function completeSale(data: {
           productName: item.productName,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
+          discountType: item.discountType,
+          discountValue: item.discountValue,
+          discountTotal: item.discountTotal,
           lineTotal: item.lineTotal
         })
         .returning()

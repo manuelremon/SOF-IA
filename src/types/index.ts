@@ -57,12 +57,17 @@ export interface Supplier {
   updatedAt: string
 }
 
+export type DiscountType = 'porcentaje' | 'monto' | null
+
 export interface Sale {
   id: number
   customerId: number | null
   userId: number | null
   receiptNumber: string
   subtotal: number
+  discountType: DiscountType
+  discountValue: number
+  discountTotal: number
   taxTotal: number
   total: number
   amountTendered: number
@@ -83,6 +88,9 @@ export interface SaleItem {
   productName: string
   quantity: number
   unitPrice: number
+  discountType: DiscountType
+  discountValue: number
+  discountTotal: number
   lineTotal: number
 }
 
@@ -92,6 +100,8 @@ export interface CartItem {
   unitPrice: number
   quantity: number
   stock: number
+  discountType?: DiscountType
+  discountValue?: number
 }
 
 export interface IpcResult<T = unknown> {
@@ -129,6 +139,66 @@ export interface RecentSale {
   paymentMethod: string
   createdAt: string
   customerName: string
+}
+
+/* ------------------------------------------------------------------ */
+/*  Purchase Orders                                                    */
+/* ------------------------------------------------------------------ */
+
+export type POStatus = 'borrador' | 'enviado' | 'recibido_parcial' | 'recibido' | 'cancelado'
+
+export interface PurchaseOrder {
+  id: number
+  supplierId: number
+  userId: number | null
+  orderNumber: string
+  status: POStatus
+  orderDate: string
+  expectedDate: string | null
+  subtotal: number
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+  supplierName?: string
+  userName?: string
+  items?: PurchaseOrderItem[]
+}
+
+export interface PurchaseOrderItem {
+  id: number
+  purchaseOrderId: number
+  productId: number
+  productName: string
+  quantityOrdered: number
+  quantityReceived: number
+  unitCost: number
+  lineTotal: number
+}
+
+/* ------------------------------------------------------------------ */
+/*  Goods Receipts                                                     */
+/* ------------------------------------------------------------------ */
+
+export interface GoodsReceipt {
+  id: number
+  purchaseOrderId: number
+  userId: number | null
+  receiptNumber: string
+  notes: string | null
+  createdAt: string
+  orderNumber?: string
+  supplierName?: string
+  userName?: string
+  items?: GoodsReceiptItem[]
+}
+
+export interface GoodsReceiptItem {
+  id: number
+  goodsReceiptId: number
+  purchaseOrderItemId: number
+  productId: number
+  quantityReceived: number
+  productName?: string
 }
 
 export interface AppSettings {

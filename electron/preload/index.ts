@@ -45,6 +45,7 @@ const api = {
     getById: (id: number) => ipcRenderer.invoke('users:getById', id),
     create: (data: unknown) => ipcRenderer.invoke('users:create', data),
     update: (data: unknown) => ipcRenderer.invoke('users:update', data),
+    delete: (id: number) => ipcRenderer.invoke('users:delete', id),
     authenticate: (name: string, pin: string) => ipcRenderer.invoke('users:authenticate', name, pin),
     changePin: (data: unknown) => ipcRenderer.invoke('users:changePin', data)
   },
@@ -59,9 +60,47 @@ const api = {
     salesChart: (days?: number) => ipcRenderer.invoke('dashboard:salesChart', days),
     topProducts: (limit?: number) => ipcRenderer.invoke('dashboard:topProducts', limit),
     recentSales: (limit?: number) => ipcRenderer.invoke('dashboard:recentSales', limit)
+  },
+  purchaseOrders: {
+    list: (filters?: unknown) => ipcRenderer.invoke('purchaseOrders:list', filters),
+    getById: (id: number) => ipcRenderer.invoke('purchaseOrders:getById', id),
+    create: (data: unknown) => ipcRenderer.invoke('purchaseOrders:create', data),
+    update: (data: unknown) => ipcRenderer.invoke('purchaseOrders:update', data),
+    updateStatus: (data: unknown) => ipcRenderer.invoke('purchaseOrders:updateStatus', data),
+    cancel: (id: number) => ipcRenderer.invoke('purchaseOrders:cancel', id)
+  },
+  cashRegister: {
+    open: (data: unknown) => ipcRenderer.invoke('cashRegister:open', data),
+    current: () => ipcRenderer.invoke('cashRegister:current'),
+    close: (data: unknown) => ipcRenderer.invoke('cashRegister:close', data),
+    list: (limit?: number) => ipcRenderer.invoke('cashRegister:list', limit)
+  },
+  reports: {
+    byPeriod: (from: string, to: string, groupBy?: string) =>
+      ipcRenderer.invoke('reports:byPeriod', from, to, groupBy),
+    byProduct: (from: string, to: string) => ipcRenderer.invoke('reports:byProduct', from, to),
+    byPaymentMethod: (from: string, to: string) =>
+      ipcRenderer.invoke('reports:byPaymentMethod', from, to),
+    byCustomer: (from: string, to: string) => ipcRenderer.invoke('reports:byCustomer', from, to),
+    profit: (from: string, to: string) => ipcRenderer.invoke('reports:profit', from, to)
+  },
+  goodsReceipts: {
+    receive: (data: unknown) => ipcRenderer.invoke('goodsReceipts:receive', data),
+    list: (filters?: unknown) => ipcRenderer.invoke('goodsReceipts:list', filters),
+    getById: (id: number) => ipcRenderer.invoke('goodsReceipts:getById', id)
   }
 }
 
 contextBridge.exposeInMainWorld('api', api)
 
+contextBridge.exposeInMainWorld('electronNav', {
+  onNavigate: (callback: (path: string) => void) => {
+    ipcRenderer.on('navigate', (_e, path) => callback(path))
+    return () => { ipcRenderer.removeAllListeners('navigate') }
+  }
+})
+
 export type ApiType = typeof api
+export type ElectronNavType = {
+  onNavigate: (callback: (path: string) => void) => () => void
+}

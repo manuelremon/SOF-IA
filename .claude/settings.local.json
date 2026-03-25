@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -A 50 '\"\"build\"\"' /c/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/package.json)",
+      "Bash(wc -l /c/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/pages/*.tsx /c/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/components/*/*.tsx)",
+      "Bash(wc:*)"
+    ]
+  }
+}

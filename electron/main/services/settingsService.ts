@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { getDb } from '../db/connection'
 import { appSettings } from '../db/schema'
 
@@ -21,10 +21,10 @@ export function getSetting(key: string): string {
 export function setSetting(key: string, value: string): void {
   const db = getDb()
   db.insert(appSettings)
-    .values({ key, value, updatedAt: new Date().toISOString() })
+    .values({ key, value, updatedAt: sql`(datetime('now','localtime'))` })
     .onConflictDoUpdate({
       target: appSettings.key,
-      set: { value, updatedAt: new Date().toISOString() }
+      set: { value, updatedAt: sql`(datetime('now','localtime'))` }
     })
     .run()
 }

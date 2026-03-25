@@ -10,6 +10,10 @@ import ClientesPage from './pages/ClientesPage'
 import ProveedoresPage from './pages/ProveedoresPage'
 import UsuariosPage from './pages/UsuariosPage'
 import ConfiguracionPage from './pages/ConfiguracionPage'
+import ComprasPage from './pages/ComprasPage'
+import RecepcionesPage from './pages/RecepcionesPage'
+import ReportesPage from './pages/ReportesPage'
+import CajaPage from './pages/CajaPage'
 import { useAuthStore, type AuthUser } from './stores/authStore'
 
 function App(): JSX.Element {
@@ -28,12 +32,17 @@ function App(): JSX.Element {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/ventas" replace />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/ventas" element={<VentasPage />} />
         <Route path="/inventario" element={<InventarioPage />} />
         <Route path="/catalogo" element={<CatalogoPage />} />
         <Route path="/clientes" element={<ClientesPage />} />
         <Route path="/proveedores" element={<ProveedoresPage />} />
+        <Route path="/compras" element={<ComprasPage />} />
+        <Route path="/recepciones" element={<RecepcionesPage />} />
+        <Route path="/reportes" element={<ReportesPage />} />
+        <Route path="/caja" element={<CajaPage />} />
         {isAdmin && <Route path="/usuarios" element={<UsuariosPage />} />}
         {isAdmin && <Route path="/configuracion" element={<ConfiguracionPage />} />}
         <Route path="*" element={<Navigate to="/" replace />} />

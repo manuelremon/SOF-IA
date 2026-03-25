@@ -1,6 +1,11 @@
 import { eq, asc, sql } from 'drizzle-orm'
+import { createHash } from 'crypto'
 import { getDb } from '../db/connection'
 import * as schema from '../db/schema'
+
+function hashPin(pin: string): string {
+  return createHash('sha256').update(pin).digest('hex')
+}
 
 export function listUsers() {
   const db = getDb()
@@ -39,7 +44,7 @@ export function createUser(data: { name: string; pin: string; role?: string }) {
     .insert(schema.users)
     .values({
       name: data.name,
-      pin: data.pin,
+      pin: hashPin(data.pin),
       role: data.role ?? 'vendedor'
     })
     .returning({ id: schema.users.id, name: schema.users.name, role: schema.users.role })
@@ -61,6 +66,15 @@ export function updateUser(data: { id: number; name?: string; role?: string; isA
     .get()
 }
 
+export function deactivateUser(id: number) {
+  const db = getDb()
+  db.update(schema.users)
+    .set({ isActive: false, updatedAt: sql`(datetime('now','localtime'))` })
+    .where(eq(schema.users.id, id))
+    .run()
+  return { deleted: true }
+}
+
 export function authenticate(name: string, pin: string) {
   const db = getDb()
   const user = db
@@ -77,7 +91,7 @@ export function authenticate(name: string, pin: string) {
 
   if (!user) return null
   if (!user.isActive) return null
-  if (user.pin !== pin) return null
+  if (user.pin !== hashPin(pin)) return null
 
   return { id: user.id, name: user.name, role: user.role }
 }
@@ -86,10 +100,10 @@ export function changePin(data: { id: number; currentPin: string; newPin: string
   const db = getDb()
   const user = db.select().from(schema.users).where(eq(schema.users.id, data.id)).get()
   if (!user) throw new Error('Usuario no encontrado')
-  if (user.pin !== data.currentPin) throw new Error('PIN actual incorrecto')
+  if (user.pin !== hashPin(data.currentPin)) throw new Error('PIN actual incorrecto')
 
   db.update(schema.users)
-    .set({ pin: data.newPin, updatedAt: sql`(datetime('now','localtime'))` })
+    .set({ pin: hashPin(data.newPin), updatedAt: sql`(datetime('now','localtime'))` })
     .where(eq(schema.users.id, data.id))
     .run()
 

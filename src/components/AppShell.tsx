@@ -2,37 +2,19 @@ import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   AppShell as MantineAppShell,
-  NavLink,
   Group,
   Text,
   ActionIcon,
-  Box,
-  Divider
+  Badge
 } from '@mantine/core'
-import {
-  IconDashboard,
-  IconShoppingCart,
-  IconPackage,
-  IconLayoutGrid,
-  IconUsers,
-  IconTruck,
-  IconUserCog,
-  IconSettings,
-  IconLogout,
-  IconClock
-} from '@tabler/icons-react'
+import { IconClock, IconLogout } from '@tabler/icons-react'
 import { useAuthStore } from '../stores/authStore'
 
-const NAV_ITEMS = [
-  { label: 'Dashboard', icon: IconDashboard, path: '/', roles: ['admin', 'vendedor', 'almacenista'] },
-  { label: 'Ventas', icon: IconShoppingCart, path: '/ventas', roles: ['admin', 'vendedor'] },
-  { label: 'Inventario', icon: IconPackage, path: '/inventario', roles: ['admin', 'vendedor', 'almacenista'] },
-  { label: 'Catálogo', icon: IconLayoutGrid, path: '/catalogo', roles: ['admin', 'vendedor', 'almacenista'] },
-  { label: 'Clientes', icon: IconUsers, path: '/clientes', roles: ['admin', 'vendedor'] },
-  { label: 'Proveedores', icon: IconTruck, path: '/proveedores', roles: ['admin', 'almacenista'] },
-  { label: 'Usuarios', icon: IconUserCog, path: '/usuarios', roles: ['admin'] },
-  { label: 'Configuración', icon: IconSettings, path: '/configuracion', roles: ['admin'] }
-]
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Admin',
+  vendedor: 'Vendedor',
+  almacenista: 'Almacenista'
+}
 
 export default function AppShell(): JSX.Element {
   const navigate = useNavigate()
@@ -55,83 +37,81 @@ export default function AppShell(): JSX.Element {
     })
   }, [])
 
+  // Listen for navigation from Electron native menu
+  useEffect(() => {
+    const cleanup = window.electronNav.onNavigate((path: string) => {
+      if (path === '/logout') {
+        logout()
+        navigate('/')
+      } else {
+        navigate(path)
+      }
+    })
+    return cleanup
+  }, [navigate, logout])
+
   const handleLogout = (): void => {
     logout()
     navigate('/')
   }
 
-  const visibleNavItems = NAV_ITEMS.filter(
-    (item) => user && item.roles.includes(user.role)
-  )
+  // Page title based on current route
+  const PAGE_TITLES: Record<string, string> = {
+    '/dashboard': 'Dashboard',
+    '/ventas': 'Punto de Venta',
+    '/inventario': 'Inventario',
+    '/catalogo': 'Catálogo',
+    '/clientes': 'Clientes',
+    '/proveedores': 'Proveedores',
+    '/compras': 'Órdenes de Compra',
+    '/recepciones': 'Recepciones',
+    '/reportes': 'Reportes',
+    '/caja': 'Caja',
+    '/usuarios': 'Usuarios',
+    '/configuracion': 'Configuración'
+  }
+
+  const pageTitle = PAGE_TITLES[location.pathname] || ''
 
   return (
     <MantineAppShell
-      navbar={{ width: 240, breakpoint: 'sm' }}
-      header={{ height: 56 }}
+      header={{ height: 40 }}
       padding="md"
       styles={{
         main: { backgroundColor: '#F5F6F7' },
-        header: { backgroundColor: '#354A5F', borderBottom: 'none' },
-        navbar: { backgroundColor: '#fff', borderRight: '1px solid #e0e0e0' }
+        header: { backgroundColor: '#354A5F', borderBottom: 'none' }
       }}
     >
       <MantineAppShell.Header>
         <Group h="100%" px="md" justify="space-between">
-          <Group gap="xs">
-            <Text fw={700} size="lg" c="white">
-              SOF-IA
-            </Text>
-            <Text size="xs" c="gray.4">
-              |
-            </Text>
-            <Text size="sm" c="gray.3">
+          <Group gap="sm">
+            <Text fw={600} size="sm" c="white">
               {businessName}
             </Text>
+            {pageTitle && (
+              <>
+                <Text size="xs" c="gray.5">›</Text>
+                <Text size="sm" c="gray.3">{pageTitle}</Text>
+              </>
+            )}
           </Group>
           <Group gap="md">
             <Group gap={4}>
-              <IconClock size={16} color="#adb5bd" />
-              <Text size="sm" c="gray.3">
-                {clock}
-              </Text>
+              <IconClock size={14} color="#adb5bd" />
+              <Text size="xs" c="gray.3">{clock}</Text>
             </Group>
-            <Text size="sm" c="gray.3">
-              {user?.name} ({user?.role})
-            </Text>
-            <ActionIcon variant="subtle" color="gray.3" onClick={handleLogout} title="Cerrar sesión">
-              <IconLogout size={18} />
+            <Group gap={6}>
+              <Text size="xs" c="gray.3">{user?.name}</Text>
+              <Badge size="xs" variant="light" color="gray">
+                {ROLE_LABELS[user?.role ?? ''] || user?.role}
+              </Badge>
+            </Group>
+            <ActionIcon variant="subtle" color="gray.3" size="sm" onClick={handleLogout} title="Cerrar sesión">
+              <IconLogout size={16} />
             </ActionIcon>
           </Group>
         </Group>
       </MantineAppShell.Header>
-
-      <MantineAppShell.Navbar p="xs">
-        <Box style={{ flex: 1 }}>
-          {visibleNavItems.map((item) => (
-            <NavLink
-              key={item.path}
-              label={item.label}
-              leftSection={<item.icon size={20} />}
-              active={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-              styles={{
-                root: {
-                  borderRadius: 4,
-                  marginBottom: 2,
-                  '&[data-active]': {
-                    backgroundColor: '#e6f2ff',
-                    color: '#0A6ED1'
-                  }
-                }
-              }}
-            />
-          ))}
-        </Box>
-        <Divider my="xs" />
-        <Text size="xs" c="dimmed" ta="center">
-          SOF-IA v1.0.0
-        </Text>
-      </MantineAppShell.Navbar>
 
       <MantineAppShell.Main>
         <Outlet />

@@ -30,7 +30,10 @@ export function updateCategory(data: { id: number; name?: string; color?: string
 
 export function deleteCategory(id: number) {
   const db = getDb()
-  db.delete(schema.categories).where(eq(schema.categories.id, id)).run()
+  db.update(schema.categories)
+    .set({ isActive: false })
+    .where(eq(schema.categories.id, id))
+    .run()
   return { deleted: true }
 }
 

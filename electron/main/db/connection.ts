@@ -1,10 +1,15 @@
 import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, mkdirSync, copyFileSync } from 'fs'
+import { createHash } from 'crypto'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema'
+
+function hashPin(pin: string): string {
+  return createHash('sha256').update(pin).digest('hex')
+}
 
 let db: ReturnType<typeof drizzle<typeof schema>>
 let sqlite: Database.Database
@@ -36,7 +41,7 @@ function seedDefaults(sqliteDb: Database.Database): void {
       .prepare(
         `INSERT INTO users (name, pin, role, is_active) VALUES (?, ?, ?, ?)`
       )
-      .run('Administrador', '1234', 'admin', 1)
+      .run('Administrador', hashPin('1234'), 'admin', 1)
   }
 
   // Seed default settings if empty
@@ -82,7 +87,67 @@ export function initDb(): void {
     migrate(db, { migrationsFolder })
   }
 
+  applySchemaUpdates(sqlite)
   seedDefaults(sqlite)
+  migratePlaintextPins(sqlite)
+  createIndexes(sqlite)
+}
+
+function applySchemaUpdates(sqliteDb: Database.Database): void {
+  const addColumn = (table: string, col: string, def: string): void => {
+    try { sqliteDb.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`) } catch { /* already exists */ }
+  }
+  // Cash registers table
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS cash_registers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER REFERENCES users(id),
+      opened_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      closed_at TEXT,
+      opening_amount REAL NOT NULL DEFAULT 0,
+      closing_amount REAL,
+      expected_amount REAL,
+      difference REAL,
+      cash_sales REAL NOT NULL DEFAULT 0,
+      card_sales REAL NOT NULL DEFAULT 0,
+      transfer_sales REAL NOT NULL DEFAULT 0,
+      total_sales REAL NOT NULL DEFAULT 0,
+      sales_count INTEGER NOT NULL DEFAULT 0,
+      notes TEXT,
+      status TEXT NOT NULL DEFAULT 'abierta'
+    )
+  `)
+  // Discount columns on sales
+  addColumn('sales', 'discount_type', 'text')
+  addColumn('sales', 'discount_value', 'real NOT NULL DEFAULT 0')
+  addColumn('sales', 'discount_total', 'real NOT NULL DEFAULT 0')
+  // Discount columns on sale_items
+  addColumn('sale_items', 'discount_type', 'text')
+  addColumn('sale_items', 'discount_value', 'real NOT NULL DEFAULT 0')
+  addColumn('sale_items', 'discount_total', 'real NOT NULL DEFAULT 0')
+}
+
+function createIndexes(sqliteDb: Database.Database): void {
+  sqliteDb.exec(`
+    CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
+    CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
+    CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+    CREATE INDEX IF NOT EXISTS idx_sales_receipt_number ON sales(receipt_number);
+    CREATE INDEX IF NOT EXISTS idx_sales_created_at ON sales(created_at);
+    CREATE INDEX IF NOT EXISTS idx_sales_status ON sales(status);
+    CREATE INDEX IF NOT EXISTS idx_purchase_orders_order_number ON purchase_orders(order_number);
+    CREATE INDEX IF NOT EXISTS idx_goods_receipts_receipt_number ON goods_receipts(receipt_number);
+  `)
+}
+
+function migratePlaintextPins(sqliteDb: Database.Database): void {
+  const users = sqliteDb.prepare('SELECT id, pin FROM users').all() as Array<{ id: number; pin: string }>
+  const update = sqliteDb.prepare('UPDATE users SET pin = ? WHERE id = ?')
+  for (const user of users) {
+    if (user.pin.length !== 64) {
+      update.run(hashPin(user.pin), user.id)
+    }
+  }
 }
 
 export function getDb(): typeof db {

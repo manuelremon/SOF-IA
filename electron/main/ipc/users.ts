@@ -18,6 +18,10 @@ export function registerUserHandlers(): void {
     try { return { ok: true, data: userService.updateUser(data) } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
+  ipcMain.handle('users:delete', async (_e, id) => {
+    try { return { ok: true, data: userService.deactivateUser(id) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
   ipcMain.handle('users:authenticate', async (_e, name, pin) => {
     try { return { ok: true, data: userService.authenticate(name, pin) } }
     catch (err: any) { return { ok: false, error: err.message } }

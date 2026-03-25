@@ -5,6 +5,10 @@ import { registerSupplierHandlers } from './suppliers'
 import { registerUserHandlers } from './users'
 import { registerSettingsHandlers } from './settings'
 import { registerDashboardHandlers } from './dashboard'
+import { registerPurchaseOrderHandlers } from './purchaseOrders'
+import { registerGoodsReceiptHandlers } from './goodsReceipts'
+import { registerReportHandlers } from './reports'
+import { registerCashRegisterHandlers } from './cashRegister'
 
 export function registerAllHandlers(): void {
   registerProductHandlers()
@@ -14,4 +18,8 @@ export function registerAllHandlers(): void {
   registerUserHandlers()
   registerSettingsHandlers()
   registerDashboardHandlers()
+  registerPurchaseOrderHandlers()
+  registerGoodsReceiptHandlers()
+  registerReportHandlers()
+  registerCashRegisterHandlers()
 }

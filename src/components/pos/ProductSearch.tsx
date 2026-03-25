@@ -1,7 +1,19 @@
-import { useState, useCallback } from 'react'
-import { TextInput, Paper, Stack, Group, Text, UnstyledButton, Badge } from '@mantine/core'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  TextInput,
+  Paper,
+  Stack,
+  Group,
+  Text,
+  UnstyledButton,
+  Badge,
+  ActionIcon,
+  Tooltip,
+  ScrollArea,
+  Divider
+} from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
-import { IconSearch } from '@tabler/icons-react'
+import { IconSearch, IconCamera, IconBarcode, IconPackage } from '@tabler/icons-react'
 import type { Product } from '../../types'
 
 const fmt = (n: number) =>
@@ -9,78 +21,201 @@ const fmt = (n: number) =>
 
 interface ProductSearchProps {
   onSelect: (product: Product) => void
+  onCameraOpen: () => void
 }
 
-export default function ProductSearch({ onSelect }: ProductSearchProps): JSX.Element {
+export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchProps): JSX.Element {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<Product[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [filtered, setFiltered] = useState<Product[]>([])
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const search = useDebouncedCallback(async (q: string) => {
-    if (q.length < 1) { setResults([]); return }
-    const res = await window.api.products.search(q)
-    if (res.ok && res.data) setResults(res.data as Product[])
-  }, 250)
+  // Cargar todos los productos al montar
+  useEffect(() => {
+    const load = async () => {
+      const res = await window.api.products.search('')
+      if (res.ok && res.data) {
+        const products = res.data as Product[]
+        setAllProducts(products)
+        setFiltered(products)
+      }
+    }
+    load()
+  }, [])
+
+  const filterProducts = useDebouncedCallback((q: string) => {
+    if (q.length < 1) {
+      setFiltered(allProducts)
+      return
+    }
+    const lower = q.toLowerCase()
+    setFiltered(
+      allProducts.filter(
+        (p) =>
+          p.name.toLowerCase().includes(lower) ||
+          (p.barcode && p.barcode.toLowerCase().includes(lower)) ||
+          (p.sku && p.sku.toLowerCase().includes(lower))
+      )
+    )
+  }, 150)
 
   const handleChange = (value: string): void => {
     setQuery(value)
-    search(value)
+    filterProducts(value)
   }
 
   const handleSelect = (product: Product): void => {
     onSelect(product)
-    setQuery('')
-    setResults([])
+    inputRef.current?.focus()
   }
 
+  // Búsqueda directa por código de barras (lector USB o cámara)
+  const searchByBarcode = useCallback(
+    async (code: string) => {
+      const res = await window.api.products.search(code)
+      if (res.ok && res.data) {
+        const products = res.data as Product[]
+        if (products.length === 1) {
+          handleSelect(products[0])
+        } else if (products.length > 1) {
+          setQuery(code)
+          setFiltered(products)
+        } else {
+          setQuery(code)
+          setFiltered([])
+        }
+      }
+    },
+    [allProducts]
+  )
+
+  // Exponer searchByBarcode para que VentasPage lo pueda llamar
+  ;(ProductSearch as any)._searchByBarcode = searchByBarcode
+
+  // Refrescar lista cuando se agrega un producto al carrito (stock cambia)
+  const refreshProducts = useCallback(async () => {
+    const res = await window.api.products.search('')
+    if (res.ok && res.data) {
+      const products = res.data as Product[]
+      setAllProducts(products)
+      // Re-aplicar filtro actual
+      if (query.length < 1) {
+        setFiltered(products)
+      } else {
+        const lower = query.toLowerCase()
+        setFiltered(
+          products.filter(
+            (p) =>
+              p.name.toLowerCase().includes(lower) ||
+              (p.barcode && p.barcode.toLowerCase().includes(lower)) ||
+              (p.sku && p.sku.toLowerCase().includes(lower))
+          )
+        )
+      }
+    }
+  }, [query])
+
   return (
-    <Stack gap={0} pos="relative">
-      <TextInput
-        placeholder="Buscar producto por nombre, código o SKU..."
-        leftSection={<IconSearch size={16} />}
-        value={query}
-        onChange={(e) => handleChange(e.currentTarget.value)}
-        size="md"
-      />
-      {results.length > 0 && (
-        <Paper
-          shadow="md"
-          withBorder
-          pos="absolute"
-          top={42}
-          left={0}
-          right={0}
-          style={{ zIndex: 100, maxHeight: 300, overflowY: 'auto' }}
-        >
-          {results.map((p) => (
-            <UnstyledButton
-              key={p.id}
-              w="100%"
-              p="xs"
-              onClick={() => handleSelect(p)}
-              styles={{ root: { '&:hover': { backgroundColor: '#f5f6f7' } } }}
-            >
-              <Group justify="space-between">
-                <div>
-                  <Text size="sm" fw={500}>
-                    {p.name}
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    {p.barcode || p.sku || ''}
-                  </Text>
-                </div>
-                <Group gap="xs">
-                  <Badge size="sm" variant="light" color={p.stock > 0 ? 'green' : 'red'}>
-                    Stock: {p.stock}
-                  </Badge>
-                  <Text fw={600} size="sm">
-                    {fmt(p.salePrice)}
-                  </Text>
+    <Stack gap="xs">
+      <Group gap="xs" align="flex-end">
+        <TextInput
+          ref={inputRef}
+          placeholder="Buscar producto por nombre, código o SKU..."
+          leftSection={<IconSearch size={16} />}
+          value={query}
+          onChange={(e) => handleChange(e.currentTarget.value)}
+          size="md"
+          data-barcode-target="true"
+          style={{ flex: 1 }}
+        />
+        <Tooltip label="Escanear con cámara" position="bottom">
+          <ActionIcon
+            variant="light"
+            color="blue"
+            size="lg"
+            h={42}
+            w={42}
+            onClick={onCameraOpen}
+          >
+            <IconCamera size={20} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
+      <Paper shadow="xs" withBorder>
+        <Group px="sm" py={6} bg="gray.0" justify="space-between">
+          <Group gap={6}>
+            <IconPackage size={14} color="#868e96" />
+            <Text size="xs" c="dimmed" fw={600} tt="uppercase">
+              Catálogo
+            </Text>
+          </Group>
+          <Text size="xs" c="dimmed">
+            {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+          </Text>
+        </Group>
+        <Divider />
+        <ScrollArea h={420} scrollbarSize={6}>
+          {filtered.length === 0 ? (
+            <Text size="sm" c="dimmed" ta="center" py="xl">
+              No se encontraron productos
+            </Text>
+          ) : (
+            filtered.map((p, i) => (
+              <UnstyledButton
+                key={p.id}
+                w="100%"
+                px="sm"
+                py={8}
+                onClick={() => handleSelect(p)}
+                disabled={p.stock <= 0}
+                style={{
+                  borderBottom: i < filtered.length - 1 ? '1px solid #f1f3f5' : undefined,
+                  opacity: p.stock <= 0 ? 0.5 : 1,
+                  cursor: p.stock <= 0 ? 'not-allowed' : 'pointer',
+                  backgroundColor: 'transparent',
+                  transition: 'background-color 150ms ease',
+                }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      backgroundColor: p.stock > 0 ? '#f8f9fa' : undefined,
+                    },
+                  },
+                }}
+              >
+                <Group justify="space-between" wrap="nowrap">
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <Text size="sm" fw={500} truncate>
+                      {p.name}
+                    </Text>
+                    {(p.barcode || p.sku) && (
+                      <Group gap={4}>
+                        <IconBarcode size={12} color="#868e96" />
+                        <Text size="xs" c="dimmed" truncate>
+                          {p.barcode || p.sku}
+                        </Text>
+                      </Group>
+                    )}
+                  </div>
+                  <Group gap="xs" wrap="nowrap">
+                    <Badge
+                      size="sm"
+                      variant="light"
+                      color={p.stock > p.minStock ? 'green' : p.stock > 0 ? 'yellow' : 'red'}
+                    >
+                      {p.stock} {p.unit}
+                    </Badge>
+                    <Text fw={600} size="sm" style={{ whiteSpace: 'nowrap' }}>
+                      {fmt(p.salePrice)}
+                    </Text>
+                  </Group>
                 </Group>
-              </Group>
-            </UnstyledButton>
-          ))}
-        </Paper>
-      )}
+              </UnstyledButton>
+            ))
+          )}
+        </ScrollArea>
+      </Paper>
     </Stack>
   )
 }
