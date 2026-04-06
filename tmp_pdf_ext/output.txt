@@ -1,0 +1,44 @@
+REPORTE DE AUDITORIA DE SOFTWARE
+Proyecto: SOF-IA - Sistema de Gestion para Comercios
+1. Areas Criticas Analizadas
+* Seguridad y Autenticacion: Manejo de PINs y proteccion de datos.
+* Integridad de Datos: Transaccionalidad en el control de stock.
+* Arquitectura: Comunicacion IPC (Inter-Process Communication).
+* Rendimiento: Operaciones masivas y eficiencia SQLite.
+* UX/UI: Gestion de estado global y reactividad del frontend.
+* Ciclo de Vida: Migraciones de base de datos y consistencia.
+2. Hallazgos: Fallas y Riesgos Detectados
+A. Seguridad: Hashing Debil y Falta de Salt
+Ubicacion: electron/main/db/connection.ts
+Fragmento critico:
+function hashPin(pin: string) { return createHash("sha256").update(pin).digest("hex")
+}
+Riesgo: El uso de SHA-256 sin salt es vulnerable a ataques de fuerza bruta. Un atacante con acceso a la
+base de datos podria extraer los PINs facilmente.
+B. Integridad: Condicion de Carrera en Control de Stock
+Ubicacion: electron/main/services/salesService.ts
+Fragmento critico (Validacion fuera de la transaccion):
+if (product.stock < item.quantity) { throw new Error("Stock insuficiente") }
+Riesgo: En entornos multi-terminal, dos ventas simultaneas podrian pasar la validacion antes de actualizar el
+stock, resultando en inventario negativo.
+C. Arquitectura: Tipado "unknown" en el Puente IPC
+Pagina 1
+====
+REPORTE DE AUDITORIA DE SOFTWARE
+Proyecto: SOF-IA - Sistema de Gestion para Comercios
+Ubicacion: electron/preload/index.ts
+Impacto: Se pierde la seguridad de tipos en el frontend, lo que facilita la introduccion de errores al consumir
+APIs del backend sin validacion de esquemas.
+3. Oportunidades de Mejora
+* Migrar a Drizzle Migrations puro: Eliminar scripts manuales de actualizacion de esquema en connection.ts.
+* Optimizacion de Carga: Implementar actualizaciones masivas (bulk updates) eficientes.
+* Robustecimiento de PINs: Implementar Argon2 o Bcrypt con salt unico por usuario.
+4. Nuevas Funcionalidades Sugeridas
+1. Auditoria de Transacciones: Tabla de logs para rastrear ajustes manuales.
+2. Validacion con Zod: Asegurar que los datos recibidos por IPC cumplan con el esquema.
+3. Motor de Promociones: Soporte nativo para descuentos por cantidad.
+CONCLUSION: El proyecto SOF-IA posee una arquitectura solida basada en estandares
+modernos. No obstante, los riesgos en seguridad y atomicidad deben ser priorizados antes
+de una fase de produccion critica.
+Pagina 2
+====

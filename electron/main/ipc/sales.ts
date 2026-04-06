@@ -1,9 +1,13 @@
 import { ipcMain } from 'electron'
 import * as salesService from '../services/salesService'
+import { CompleteSaleSchema } from '../utils/validators'
 
 export function registerSalesHandlers(): void {
   ipcMain.handle('sales:complete', async (_e, data) => {
-    try { return { ok: true, data: salesService.completeSale(data) } }
+    try {
+      const parsedData = CompleteSaleSchema.parse(data)
+      return { ok: true, data: salesService.completeSale(parsedData) }
+    }
     catch (err: any) { return { ok: false, error: err.message } }
   })
   ipcMain.handle('sales:list', async (_e, filters) => {
@@ -24,6 +28,10 @@ export function registerSalesHandlers(): void {
   })
   ipcMain.handle('sales:topProducts', async (_e, limit, from, to) => {
     try { return { ok: true, data: salesService.topProducts(limit, from, to) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+  ipcMain.handle('sales:profitability', async (_e, saleId) => {
+    try { return { ok: true, data: salesService.getSaleProfitability(saleId) } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
 }

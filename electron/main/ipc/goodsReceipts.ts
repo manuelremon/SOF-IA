@@ -6,6 +6,14 @@ export function registerGoodsReceiptHandlers(): void {
     try { return { ok: true, data: grService.receiveGoods(data) } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
+  ipcMain.handle('goodsReceipts:receiveWithoutPO', async (_e, data) => {
+    try { return { ok: true, data: grService.receiveWithoutPO(data) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+  ipcMain.handle('goodsReceipts:pendingOrders', async () => {
+    try { return { ok: true, data: grService.listPendingOrders() } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
   ipcMain.handle('goodsReceipts:list', async (_e, filters) => {
     try { return { ok: true, data: grService.listGoodsReceipts(filters) } }
     catch (err: any) { return { ok: false, error: err.message } }

@@ -1,5 +1,8 @@
-import { Modal, Stack, Text, Table, Divider, Group, Button } from '@mantine/core'
-import { IconPrinter } from '@tabler/icons-react'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { Modal, Stack, Text, Table, Divider, Group, Button, Collapse, Badge, UnstyledButton } from '@mantine/core'
+import { IconPrinter, IconChevronDown, IconChevronUp, IconFlame, IconReceipt } from '@tabler/icons-react'
+import { createRoot } from 'react-dom/client'
+import TicketPrint from './TicketPrint'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
@@ -11,6 +14,55 @@ interface ReceiptModalProps {
 }
 
 export default function ReceiptModal({ opened, onClose, sale }: ReceiptModalProps): JSX.Element {
+  const [profitData, setProfitData] = useState<any>(null)
+  const [profitOpen, setProfitOpen] = useState(false)
+  const [bizSettings, setBizSettings] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (opened && sale?.id) {
+      window.api.sales.profitability(sale.id).then((r: any) => {
+        if (r.ok) setProfitData(r.data)
+      })
+      window.api.settings.getAll().then((r: any) => {
+        if (r.ok && r.data) setBizSettings(r.data)
+      })
+    } else {
+      setProfitData(null)
+      setProfitOpen(false)
+    }
+  }, [opened, sale?.id])
+
+  const handlePrintTicket = useCallback(() => {
+    if (!sale) return
+    const printWindow = window.open('', '_blank', 'width=350,height=600')
+    if (!printWindow) return
+
+    printWindow.document.write(`
+      <!DOCTYPE html><html><head><title>Ticket</title>
+      <style>@page { margin: 0; size: 80mm auto; } body { margin: 0; } @media print { body { margin: 0; } }</style>
+      </head><body><div id="ticket-root"></div></body></html>
+    `)
+    printWindow.document.close()
+
+    const root = printWindow.document.getElementById('ticket-root')
+    if (root) {
+      const reactRoot = createRoot(root)
+      reactRoot.render(
+        <TicketPrint
+          sale={sale}
+          businessName={bizSettings.business_name || 'Mi Negocio'}
+          businessAddress={bizSettings.business_address || ''}
+          businessPhone={bizSettings.business_phone || ''}
+          businessTaxId={bizSettings.business_tax_id || ''}
+          receiptFooter={bizSettings.receipt_footer || 'Gracias por su compra'}
+        />
+      )
+      setTimeout(() => {
+        printWindow.print()
+      }, 300)
+    }
+  }, [sale, bizSettings])
+
   if (!sale) return <></>
 
   return (
@@ -88,10 +140,64 @@ export default function ReceiptModal({ opened, onClose, sale }: ReceiptModalProp
             <Text size="sm">{fmt(sale.change)}</Text>
           </Group>
         )}
+        {profitData && (
+          <>
+            <Divider />
+            <UnstyledButton onClick={() => setProfitOpen((v) => !v)}>
+              <Group gap={6}>
+                <IconFlame size={14} />
+                <Text size="sm" fw={600}>Rentabilidad</Text>
+                <Badge size="sm" variant="light" color={profitData.marginPercent > 25 ? 'green' : profitData.marginPercent > 10 ? 'yellow' : 'red'}>
+                  {profitData.marginPercent.toFixed(1)}%
+                </Badge>
+                {profitOpen ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+              </Group>
+            </UnstyledButton>
+            <Collapse in={profitOpen}>
+              <Stack gap="xs">
+                <Group justify="space-between">
+                  <Text size="xs" c="dimmed">Costo total:</Text>
+                  <Text size="xs">{fmt(profitData.totalCost)}</Text>
+                </Group>
+                <Group justify="space-between">
+                  <Text size="xs" c="dimmed">Ganancia:</Text>
+                  <Text size="xs" fw={600} c={profitData.totalProfit > 0 ? 'green' : 'red'}>
+                    {fmt(profitData.totalProfit)}
+                  </Text>
+                </Group>
+                <Table withTableBorder fz="xs">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Producto</Table.Th>
+                      <Table.Th ta="right">Costo</Table.Th>
+                      <Table.Th ta="right">Ganancia</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {profitData.items.map((pi: any, idx: number) => (
+                      <Table.Tr key={idx}>
+                        <Table.Td>{pi.productName}</Table.Td>
+                        <Table.Td ta="right">{fmt(pi.costTotal)}</Table.Td>
+                        <Table.Td ta="right">
+                          <Text size="xs" c={pi.profit > 0 ? 'green' : 'red'}>{fmt(pi.profit)}</Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Stack>
+            </Collapse>
+          </>
+        )}
         <Divider />
-        <Button variant="light" leftSection={<IconPrinter size={16} />} onClick={() => window.print()}>
-          Imprimir
-        </Button>
+        <Group grow>
+          <Button variant="light" leftSection={<IconReceipt size={16} />} onClick={handlePrintTicket}>
+            Imprimir ticket
+          </Button>
+          <Button variant="subtle" leftSection={<IconPrinter size={16} />} onClick={() => window.print()}>
+            Imprimir página
+          </Button>
+        </Group>
         <Button fullWidth onClick={onClose}>
           Cerrar
         </Button>

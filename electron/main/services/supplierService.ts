@@ -16,12 +16,28 @@ export function getSupplierById(id: number) {
   return db.select().from(schema.suppliers).where(eq(schema.suppliers.id, id)).get() ?? null
 }
 
-export function createSupplier(data: { name: string; phone?: string; email?: string; address?: string; notes?: string }) {
+export function createSupplier(data: { name: string; cuit?: string; phone?: string; email?: string; address?: string; notes?: string }) {
   const db = getDb()
+
+  // Check duplicate name
+  const byName = db.select().from(schema.suppliers)
+    .where(and(eq(schema.suppliers.name, data.name), eq(schema.suppliers.isActive, true)))
+    .get()
+  if (byName) throw new Error(`Ya existe un proveedor con el nombre "${data.name}"`)
+
+  // Check duplicate CUIT
+  if (data.cuit) {
+    const byCuit = db.select().from(schema.suppliers)
+      .where(and(eq(schema.suppliers.cuit, data.cuit), eq(schema.suppliers.isActive, true)))
+      .get()
+    if (byCuit) throw new Error(`Ya existe un proveedor con el CUIT "${data.cuit}" (${byCuit.name})`)
+  }
+
   return db
     .insert(schema.suppliers)
     .values({
       name: data.name,
+      cuit: data.cuit ?? null,
       phone: data.phone ?? null,
       email: data.email ?? null,
       address: data.address ?? null,
@@ -31,11 +47,12 @@ export function createSupplier(data: { name: string; phone?: string; email?: str
     .get()
 }
 
-export function updateSupplier(data: { id: number; name?: string; phone?: string | null; email?: string | null; address?: string | null; notes?: string | null; isActive?: boolean }) {
+export function updateSupplier(data: { id: number; name?: string; cuit?: string | null; phone?: string | null; email?: string | null; address?: string | null; notes?: string | null; isActive?: boolean }) {
   const db = getDb()
   const { id, ...fields } = data
   const setValues: Record<string, unknown> = { updatedAt: sql`(datetime('now','localtime'))` }
   if (fields.name !== undefined) setValues.name = fields.name
+  if (fields.cuit !== undefined) setValues.cuit = fields.cuit
   if (fields.phone !== undefined) setValues.phone = fields.phone
   if (fields.email !== undefined) setValues.email = fields.email
   if (fields.address !== undefined) setValues.address = fields.address

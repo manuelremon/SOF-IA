@@ -24,6 +24,7 @@ export default function VentasPage(): JSX.Element {
       productId: product.id,
       productName: product.name,
       unitPrice: product.salePrice,
+      costPrice: product.costPrice,
       stock: product.stock
     })
   }, [addItem])

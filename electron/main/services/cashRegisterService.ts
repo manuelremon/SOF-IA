@@ -89,6 +89,45 @@ export function closeRegister(data: { id: number; closingAmount: number; notes?:
     .get()
 }
 
+export function getLiveSnapshot() {
+  const db = getDb()
+  const reg = db
+    .select()
+    .from(schema.cashRegisters)
+    .where(eq(schema.cashRegisters.status, 'abierta'))
+    .get()
+  if (!reg) return null
+
+  const sqlite = getSqlite()
+  const salesData = sqlite.prepare(`
+    SELECT
+      COUNT(*) as cnt,
+      COALESCE(SUM(total), 0) as totalSales,
+      COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN total ELSE 0 END), 0) as cashSales,
+      COALESCE(SUM(CASE WHEN payment_method = 'tarjeta' THEN total ELSE 0 END), 0) as cardSales,
+      COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN total ELSE 0 END), 0) as transferSales,
+      COALESCE(SUM(CASE WHEN payment_method = 'cuenta_corriente' THEN total ELSE 0 END), 0) as creditSales
+    FROM sales
+    WHERE status = 'completada'
+      AND datetime(created_at) >= datetime(?)
+  `).get(reg.openedAt) as any
+
+  const cashInRegister = reg.openingAmount + (salesData.cashSales ?? 0)
+
+  return {
+    id: reg.id,
+    openedAt: reg.openedAt,
+    openingAmount: reg.openingAmount,
+    cashSales: salesData.cashSales ?? 0,
+    cardSales: salesData.cardSales ?? 0,
+    transferSales: salesData.transferSales ?? 0,
+    creditSales: salesData.creditSales ?? 0,
+    totalSales: salesData.totalSales ?? 0,
+    salesCount: salesData.cnt ?? 0,
+    cashInRegister
+  }
+}
+
 export function listRegisters(limit = 20) {
   const db = getDb()
   return db

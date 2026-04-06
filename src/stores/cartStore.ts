@@ -15,6 +15,9 @@ interface CartState {
   getSubtotalWithDiscounts: () => number
   getGeneralDiscountTotal: () => number
   getItemCount: () => number
+  getEstimatedCost: () => number
+  getEstimatedProfit: () => number
+  getEstimatedMarginPercent: () => number
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -41,6 +44,7 @@ export const useCartStore = create<CartState>((set, get) => ({
             productId: item.productId,
             productName: item.productName,
             unitPrice: item.unitPrice,
+            costPrice: item.costPrice ?? 0,
             stock: item.stock,
             quantity: item.quantity ?? 1
           }
@@ -105,5 +109,15 @@ export const useCartStore = create<CartState>((set, get) => ({
     return get().getSubtotal() - get().getGeneralDiscountTotal()
   },
 
-  getItemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0)
+  getItemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
+
+  getEstimatedCost: () => get().items.reduce((sum, i) => sum + i.costPrice * i.quantity, 0),
+
+  getEstimatedProfit: () => get().getSubtotalWithDiscounts() - get().getEstimatedCost(),
+
+  getEstimatedMarginPercent: () => {
+    const revenue = get().getSubtotalWithDiscounts()
+    if (revenue <= 0) return 0
+    return (get().getEstimatedProfit() / revenue) * 100
+  }
 }))

@@ -3,9 +3,8 @@ import { LoadingOverlay } from '@mantine/core'
 import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import VentasPage from './pages/VentasPage'
-import InventarioPage from './pages/InventarioPage'
 import CatalogoPage from './pages/CatalogoPage'
+import StockPage from './pages/StockPage'
 import ClientesPage from './pages/ClientesPage'
 import ProveedoresPage from './pages/ProveedoresPage'
 import UsuariosPage from './pages/UsuariosPage'
@@ -32,11 +31,10 @@ function App(): JSX.Element {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/" element={<Navigate to="/ventas" replace />} />
+        <Route path="/" element={<Navigate to="/caja" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/ventas" element={<VentasPage />} />
-        <Route path="/inventario" element={<InventarioPage />} />
         <Route path="/catalogo" element={<CatalogoPage />} />
+        <Route path="/stock" element={<StockPage />} />
         <Route path="/clientes" element={<ClientesPage />} />
         <Route path="/proveedores" element={<ProveedoresPage />} />
         <Route path="/compras" element={<ComprasPage />} />

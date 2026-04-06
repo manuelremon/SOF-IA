@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
   Modal, Stack, Select, NumberInput, Button, Group, Text, Alert,
-  SegmentedControl, Divider
+  SegmentedControl, Divider, ActionIcon, TextInput, Tooltip
 } from '@mantine/core'
-import { IconAlertCircle, IconDiscount } from '@tabler/icons-react'
+import { IconAlertCircle, IconDiscount, IconPlus } from '@tabler/icons-react'
 import { useCartStore } from '../../stores/cartStore'
 import { useAuthStore } from '../../stores/authStore'
 import { notifications } from '@mantine/notifications'
@@ -29,6 +29,12 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null)
   const [discType, setDiscType] = useState<string>('porcentaje')
   const [discValue, setDiscValue] = useState<number>(0)
+  const [accountBalance, setAccountBalance] = useState<number>(0)
+  const [accountCreditLimit, setAccountCreditLimit] = useState<number>(0)
+  const [newCustOpened, setNewCustOpened] = useState(false)
+  const [newCustName, setNewCustName] = useState('')
+  const [newCustPhone, setNewCustPhone] = useState('')
+  const [newCustLoading, setNewCustLoading] = useState(false)
 
   const subtotal = getSubtotal()
   const generalDiscountTotal = getGeneralDiscountTotal()
@@ -36,6 +42,7 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
   const taxTotal = subtotalAfterDiscount * (taxRate / 100)
   const total = subtotalAfterDiscount + taxTotal
   const change = paymentMethod === 'efectivo' ? Math.max(0, amountTendered - total) : 0
+  const accountExceedsLimit = paymentMethod === 'cuenta_corriente' && accountCreditLimit > 0 && (accountBalance + total) > accountCreditLimit
 
   useEffect(() => {
     if (opened) {
@@ -50,8 +57,51 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
       window.api.customers.list({ isActive: true }).then((r: any) => {
         if (r.ok && r.data) setCustomers(r.data)
       })
+      setAccountBalance(0)
+      setAccountCreditLimit(0)
     }
   }, [opened])
+
+  // Load account info when customer changes
+  useEffect(() => {
+    if (selectedCustomerId) {
+      window.api.customerAccount.get(parseInt(selectedCustomerId)).then((r: any) => {
+        if (r.ok && r.data) {
+          setAccountBalance(r.data.balance ?? 0)
+          setAccountCreditLimit(r.data.creditLimit ?? 0)
+        }
+      })
+    } else {
+      setAccountBalance(0)
+      setAccountCreditLimit(0)
+      if (paymentMethod === 'cuenta_corriente') setPaymentMethod('efectivo')
+    }
+  }, [selectedCustomerId])
+
+  const handleCreateCustomer = async (): Promise<void> => {
+    if (!newCustName.trim()) return
+    setNewCustLoading(true)
+    try {
+      const res = await window.api.customers.create({
+        name: newCustName.trim(),
+        phone: newCustPhone.trim() || null
+      })
+      if (res.ok && res.data) {
+        const created = res.data as any
+        setCustomers((prev) => [...prev, created])
+        setSelectedCustomerId(String(created.id))
+        setNewCustOpened(false)
+        setNewCustName('')
+        setNewCustPhone('')
+        notifications.show({ title: 'Cliente creado', message: created.name, color: 'green' })
+      } else {
+        notifications.show({ title: 'Error', message: (res as any).error || 'No se pudo crear', color: 'red' })
+      }
+    } catch {
+      notifications.show({ title: 'Error', message: 'Error al crear cliente', color: 'red' })
+    }
+    setNewCustLoading(false)
+  }
 
   const handleDiscountApply = (): void => {
     setGeneralDiscount(discValue > 0 ? discType as DiscountType : null, discValue)
@@ -59,6 +109,8 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
 
   const handleComplete = async (): Promise<void> => {
     if (paymentMethod === 'efectivo' && amountTendered < total) return
+    if (paymentMethod === 'cuenta_corriente' && !selectedCustomerId) return
+    if (paymentMethod === 'cuenta_corriente' && accountExceedsLimit) return
     setLoading(true)
     try {
       const res = await window.api.sales.complete({
@@ -80,6 +132,17 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
       })
       if (res.ok && res.data) {
         const saleData = res.data as any
+
+        // Charge to customer account if paying on credit
+        if (paymentMethod === 'cuenta_corriente' && selectedCustomerId) {
+          await window.api.customerAccount.charge({
+            customerId: parseInt(selectedCustomerId),
+            saleId: saleData.id,
+            amount: total,
+            description: `Venta ${saleData.receiptNumber}`
+          })
+        }
+
         // Attach customer name for receipt
         if (selectedCustomerId) {
           const cust = customers.find((c) => c.id === parseInt(selectedCustomerId))
@@ -87,7 +150,10 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
         }
         clear()
         onComplete(saleData)
-        notifications.show({ title: 'Venta completada', message: `Recibo: ${saleData.receiptNumber}`, color: 'green' })
+        const msg = paymentMethod === 'cuenta_corriente'
+          ? `Recibo: ${saleData.receiptNumber} — Cargado a cuenta`
+          : `Recibo: ${saleData.receiptNumber}`
+        notifications.show({ title: 'Venta completada', message: msg, color: 'green' })
       } else {
         notifications.show({ title: 'Error', message: res.error || 'No se pudo completar la venta', color: 'red' })
       }
@@ -101,15 +167,61 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
     <Modal opened={opened} onClose={onClose} title="Cobrar venta" size="md">
       <Stack>
         {/* Customer selection */}
-        <Select
-          label="Cliente (opcional)"
-          placeholder="Consumidor final"
-          clearable
-          searchable
-          value={selectedCustomerId}
-          onChange={setSelectedCustomerId}
-          data={customers.map((c) => ({ value: String(c.id), label: c.name }))}
-        />
+        <Group align="flex-end" gap="xs">
+          <Select
+            label="Cliente (opcional)"
+            placeholder="Consumidor final"
+            clearable
+            searchable
+            value={selectedCustomerId}
+            onChange={setSelectedCustomerId}
+            data={customers.map((c) => ({ value: String(c.id), label: c.name }))}
+            style={{ flex: 1 }}
+          />
+          <Tooltip label="Nuevo cliente">
+            <ActionIcon
+              variant="light"
+              color="green"
+              size="lg"
+              h={36}
+              onClick={() => setNewCustOpened(true)}
+            >
+              <IconPlus size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+
+        {/* Inline new customer form */}
+        <Modal
+          opened={newCustOpened}
+          onClose={() => setNewCustOpened(false)}
+          title="Nuevo cliente"
+          size="sm"
+        >
+          <Stack>
+            <TextInput
+              label="Nombre"
+              placeholder="Nombre del cliente"
+              value={newCustName}
+              onChange={(e) => setNewCustName(e.currentTarget.value)}
+              data-autofocus
+            />
+            <TextInput
+              label="Teléfono (opcional)"
+              placeholder="Ej: 11 2345-6789"
+              value={newCustPhone}
+              onChange={(e) => setNewCustPhone(e.currentTarget.value)}
+            />
+            <Button
+              color="green"
+              onClick={handleCreateCustomer}
+              loading={newCustLoading}
+              disabled={!newCustName.trim()}
+            >
+              Crear y seleccionar
+            </Button>
+          </Stack>
+        </Modal>
 
         <Divider label="Resumen" />
 
@@ -172,7 +284,8 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
           data={[
             { value: 'efectivo', label: 'Efectivo' },
             { value: 'tarjeta', label: 'Tarjeta' },
-            { value: 'transferencia', label: 'Transferencia' }
+            { value: 'transferencia', label: 'Transferencia' },
+            ...(selectedCustomerId ? [{ value: 'cuenta_corriente', label: 'Cuenta corriente (Fiado)' }] : [])
           ]}
         />
 
@@ -206,12 +319,37 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
           </Alert>
         )}
 
+        {paymentMethod === 'cuenta_corriente' && (
+          <Alert variant="light" color={accountExceedsLimit ? 'red' : 'blue'} icon={<IconAlertCircle size={16} />}>
+            <Group justify="space-between">
+              <Text size="sm">Saldo actual:</Text>
+              <Text size="sm" fw={600} c={accountBalance > 0 ? 'red' : 'green'}>{fmt(accountBalance)}</Text>
+            </Group>
+            {accountCreditLimit > 0 && (
+              <Group justify="space-between">
+                <Text size="sm">Límite de crédito:</Text>
+                <Text size="sm" fw={600}>{fmt(accountCreditLimit)}</Text>
+              </Group>
+            )}
+            <Group justify="space-between">
+              <Text size="sm">Nuevo saldo:</Text>
+              <Text size="sm" fw={700} c="red">{fmt(accountBalance + total)}</Text>
+            </Group>
+            {accountExceedsLimit && (
+              <Text size="xs" c="red" mt={4}>Excede el límite de crédito del cliente</Text>
+            )}
+          </Alert>
+        )}
+
         <Button
           fullWidth
           size="md"
           color="sap"
           loading={loading}
-          disabled={paymentMethod === 'efectivo' && amountTendered < total}
+          disabled={
+            (paymentMethod === 'efectivo' && amountTendered < total) ||
+            (paymentMethod === 'cuenta_corriente' && (!selectedCustomerId || accountExceedsLimit))
+          }
           onClick={handleComplete}
         >
           Confirmar venta

@@ -4,8 +4,12 @@ import {
   SimpleGrid, Card
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
-import { IconReportAnalytics, IconChartBar, IconCreditCard, IconUsers, IconCoin } from '@tabler/icons-react'
+import {
+  IconReportAnalytics, IconChartBar, IconCreditCard, IconUsers, IconCoin,
+  IconTruck, IconUserSearch
+} from '@tabler/icons-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { RingProgress, Badge } from '@mantine/core'
 
 import 'dayjs/locale/es'
 
@@ -27,6 +31,8 @@ export default function ReportesPage(): JSX.Element {
   const [customerData, setCustomerData] = useState<any[]>([])
   const [profitData, setProfitData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<string | null>('periodo')
+  const [supplierRanking, setSupplierRanking] = useState<any[]>([])
+  const [segmentation, setSegmentation] = useState<any[]>([])
 
   const from = dateRange[0]?.toISOString().slice(0, 10) ?? ''
   const to = dateRange[1]?.toISOString().slice(0, 10) ?? ''
@@ -48,6 +54,19 @@ export default function ReportesPage(): JSX.Element {
   }
 
   useEffect(() => { loadData() }, [from, to, groupBy])
+
+  useEffect(() => {
+    if (activeTab === 'proveedores') {
+      window.api.supplierScorecard.ranking().then((r: any) => {
+        if (r.ok) setSupplierRanking(r.data)
+      })
+    }
+    if (activeTab === 'segmentacion') {
+      window.api.customerInsight.segmentation().then((r: any) => {
+        if (r.ok) setSegmentation(r.data)
+      })
+    }
+  }, [activeTab])
 
   const methodLabels: Record<string, string> = {
     efectivo: 'Efectivo',
@@ -100,6 +119,8 @@ export default function ReportesPage(): JSX.Element {
           <Tabs.Tab value="producto" leftSection={<IconReportAnalytics size={16} />}>Por Producto</Tabs.Tab>
           <Tabs.Tab value="pago" leftSection={<IconCreditCard size={16} />}>Por Método</Tabs.Tab>
           <Tabs.Tab value="cliente" leftSection={<IconUsers size={16} />}>Por Cliente</Tabs.Tab>
+          <Tabs.Tab value="proveedores" leftSection={<IconTruck size={16} />}>Proveedores</Tabs.Tab>
+          <Tabs.Tab value="segmentacion" leftSection={<IconUserSearch size={16} />}>Clientes RFM</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="periodo" pt="md">
@@ -242,6 +263,99 @@ export default function ReportesPage(): JSX.Element {
               )}
             </Table.Tbody>
           </Table>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="proveedores" pt="md">
+          <Text fw={600} mb="md">Ranking de Proveedores</Text>
+          {supplierRanking.length === 0 ? (
+            <Text c="dimmed" ta="center">Sin datos de proveedores. Se necesitan órdenes de compra con recepciones.</Text>
+          ) : (
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>#</Table.Th>
+                  <Table.Th>Proveedor</Table.Th>
+                  <Table.Th ta="center">Puntualidad</Table.Th>
+                  <Table.Th ta="center">Cumplimiento</Table.Th>
+                  <Table.Th ta="center">Est. Costos</Table.Th>
+                  <Table.Th ta="center">Score</Table.Th>
+                  <Table.Th ta="right">OCs</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {supplierRanking.map((s: any, i: number) => (
+                  <Table.Tr key={s.supplierId}>
+                    <Table.Td>{i + 1}</Table.Td>
+                    <Table.Td fw={500}>{s.supplierName}</Table.Td>
+                    <Table.Td ta="center">
+                      <RingProgress size={40} thickness={4} roundCaps
+                        sections={[{ value: s.punctuality, color: s.punctuality > 70 ? 'green' : s.punctuality > 40 ? 'yellow' : 'red' }]}
+                        label={<Text size="xs" ta="center">{s.punctuality}</Text>}
+                      />
+                    </Table.Td>
+                    <Table.Td ta="center">
+                      <RingProgress size={40} thickness={4} roundCaps
+                        sections={[{ value: s.fulfillment, color: s.fulfillment > 70 ? 'green' : s.fulfillment > 40 ? 'yellow' : 'red' }]}
+                        label={<Text size="xs" ta="center">{s.fulfillment}</Text>}
+                      />
+                    </Table.Td>
+                    <Table.Td ta="center">
+                      <RingProgress size={40} thickness={4} roundCaps
+                        sections={[{ value: s.costStability, color: s.costStability > 70 ? 'green' : s.costStability > 40 ? 'yellow' : 'red' }]}
+                        label={<Text size="xs" ta="center">{s.costStability}</Text>}
+                      />
+                    </Table.Td>
+                    <Table.Td ta="center">
+                      <Badge size="lg" color={s.composite > 70 ? 'green' : s.composite > 40 ? 'yellow' : 'red'}>
+                        {s.composite}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td ta="right">{s.totalPOs}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Tabs.Panel>
+
+        <Tabs.Panel value="segmentacion" pt="md">
+          <Text fw={600} mb="md">Segmentación de Clientes (RFM)</Text>
+          {segmentation.length === 0 ? (
+            <Text c="dimmed" ta="center">Sin datos de clientes.</Text>
+          ) : (
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Cliente</Table.Th>
+                  <Table.Th ta="center">Segmento</Table.Th>
+                  <Table.Th ta="right">Compras</Table.Th>
+                  <Table.Th ta="right">Valor Total</Table.Th>
+                  <Table.Th ta="right">Ticket Prom.</Table.Th>
+                  <Table.Th>Última Compra</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {segmentation.map((c: any) => {
+                  const segColor = c.segment === 'VIP' ? 'green'
+                    : c.segment === 'En riesgo' ? 'red'
+                    : c.segment === 'Nuevo' ? 'blue'
+                    : 'gray'
+                  return (
+                    <Table.Tr key={c.customerId}>
+                      <Table.Td fw={500}>{c.customerName}</Table.Td>
+                      <Table.Td ta="center">
+                        <Badge color={segColor} variant="light">{c.segment}</Badge>
+                      </Table.Td>
+                      <Table.Td ta="right">{c.totalPurchases}</Table.Td>
+                      <Table.Td ta="right">{fmt(c.lifetimeValue)}</Table.Td>
+                      <Table.Td ta="right">{fmt(c.avgTicket)}</Table.Td>
+                      <Table.Td>{c.lastPurchase?.slice(0, 10) ?? '—'}</Table.Td>
+                    </Table.Tr>
+                  )
+                })}
+              </Table.Tbody>
+            </Table>
+          )}
         </Tabs.Panel>
       </Tabs>
     </Stack>

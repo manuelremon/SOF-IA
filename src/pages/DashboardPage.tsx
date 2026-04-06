@@ -6,10 +6,12 @@ import {
   IconPackage,
   IconAlertTriangle,
   IconUsers,
-  IconCalendar
+  IconCalendar,
+  IconReceipt2
 } from '@tabler/icons-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { KpiData, SalesChartPoint, TopProduct, RecentSale } from '../types'
+import PulseAlerts from '../components/dashboard/PulseAlerts'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
@@ -19,12 +21,14 @@ export default function DashboardPage(): JSX.Element {
   const [chart, setChart] = useState<SalesChartPoint[]>([])
   const [topProducts, setTopProducts] = useState<TopProduct[]>([])
   const [recent, setRecent] = useState<RecentSale[]>([])
+  const [totalDebt, setTotalDebt] = useState<number>(0)
 
   useEffect(() => {
     window.api.dashboard.kpis().then((r: any) => r.ok && setKpis(r.data))
     window.api.dashboard.salesChart(7).then((r: any) => r.ok && setChart(r.data))
     window.api.dashboard.topProducts(5).then((r: any) => r.ok && setTopProducts(r.data))
     window.api.dashboard.recentSales(8).then((r: any) => r.ok && setRecent(r.data))
+    window.api.customerAccount.totalDebt().then((r: any) => { if (r.ok) setTotalDebt(r.data as number) })
   }, [])
 
   const kpiCards = kpis
@@ -33,13 +37,16 @@ export default function DashboardPage(): JSX.Element {
         { label: 'Ventas del mes', value: kpis.ventasMes, sub: fmt(kpis.ingresoMes), icon: IconCalendar, color: '#107E7D' },
         { label: 'Productos', value: kpis.productos, sub: '', icon: IconPackage, color: '#6C757D' },
         { label: 'Stock bajo', value: kpis.stockBajo, sub: '', icon: IconAlertTriangle, color: kpis.stockBajo > 0 ? '#E74C3C' : '#27AE60' },
-        { label: 'Clientes', value: kpis.clientes, sub: '', icon: IconUsers, color: '#8E44AD' }
+        { label: 'Clientes', value: kpis.clientes, sub: '', icon: IconUsers, color: '#8E44AD' },
+        { label: 'Cuentas x cobrar', value: '', sub: fmt(totalDebt), icon: IconReceipt2, color: totalDebt > 0 ? '#E67E22' : '#27AE60' }
       ]
     : []
 
   return (
     <Stack gap="md">
       <Title order={3}>Dashboard</Title>
+
+      <PulseAlerts />
 
       <SimpleGrid cols={{ base: 2, sm: 3, md: 5 }}>
         {kpiCards.map((kpi) => (

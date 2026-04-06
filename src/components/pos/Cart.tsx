@@ -3,7 +3,7 @@ import {
   Table, ActionIcon, NumberInput, Text, Group, Paper, Button, Stack,
   Popover, SegmentedControl, Badge
 } from '@mantine/core'
-import { IconTrash, IconDiscount } from '@tabler/icons-react'
+import { IconTrash, IconDiscount, IconFlame } from '@tabler/icons-react'
 import { useCartStore } from '../../stores/cartStore'
 import type { DiscountType } from '../../types'
 
@@ -67,10 +67,13 @@ function ItemDiscountPopover({ productId, currentType, currentValue }: {
 }
 
 export default function Cart({ onPay }: CartProps): JSX.Element {
-  const { items, removeItem, updateQuantity, getSubtotal, getGeneralDiscountTotal } = useCartStore()
+  const { items, removeItem, updateQuantity, getSubtotal, getGeneralDiscountTotal, getEstimatedMarginPercent, getEstimatedProfit } = useCartStore()
   const subtotal = getSubtotal()
   const generalDiscountTotal = getGeneralDiscountTotal()
   const subtotalNet = subtotal - generalDiscountTotal
+  const marginPercent = getEstimatedMarginPercent()
+  const profit = getEstimatedProfit()
+  const marginColor = marginPercent > 25 ? 'green' : marginPercent > 10 ? 'yellow' : 'red'
 
   return (
     <Paper withBorder p="md" h="100%">
@@ -164,7 +167,7 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
         </div>
 
         <div>
-          <Group justify="space-between" mb="sm" pt="sm" style={{ borderTop: '1px solid #e0e0e0' }}>
+          <Group justify="space-between" mb={4} pt="sm" style={{ borderTop: '1px solid #e0e0e0' }}>
             <Text size="lg" fw={700}>
               Subtotal
             </Text>
@@ -172,6 +175,17 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
               {fmt(generalDiscountTotal > 0 ? subtotalNet : subtotal)}
             </Text>
           </Group>
+          {items.length > 0 && (
+            <Group justify="space-between" mb="sm">
+              <Group gap={4}>
+                <IconFlame size={14} color={marginColor === 'green' ? '#40c057' : marginColor === 'yellow' ? '#fab005' : '#fa5252'} />
+                <Text size="xs" c="dimmed">Margen est.</Text>
+              </Group>
+              <Badge size="sm" variant="light" color={marginColor}>
+                {marginPercent.toFixed(1)}% ({fmt(profit)})
+              </Badge>
+            </Group>
+          )}
           <Button fullWidth size="lg" color="sap" disabled={items.length === 0} onClick={onPay}>
             Cobrar
           </Button>

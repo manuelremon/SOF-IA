@@ -9,6 +9,13 @@ import { registerPurchaseOrderHandlers } from './purchaseOrders'
 import { registerGoodsReceiptHandlers } from './goodsReceipts'
 import { registerReportHandlers } from './reports'
 import { registerCashRegisterHandlers } from './cashRegister'
+import { registerSupplierScorecardHandlers } from './supplierScorecard'
+import { registerPulseHandlers } from './pulse'
+import { registerCustomerInsightHandlers } from './customerInsight'
+import { registerAutopilotHandlers } from './autopilot'
+import { registerCustomerAccountHandlers } from './customerAccount'
+import { registerBackupHandlers } from './backup'
+import { registerSupplierProductHandlers } from './supplierProduct'
 
 export function registerAllHandlers(): void {
   registerProductHandlers()
@@ -22,4 +29,11 @@ export function registerAllHandlers(): void {
   registerGoodsReceiptHandlers()
   registerReportHandlers()
   registerCashRegisterHandlers()
+  registerSupplierScorecardHandlers()
+  registerPulseHandlers()
+  registerCustomerInsightHandlers()
+  registerAutopilotHandlers()
+  registerCustomerAccountHandlers()
+  registerBackupHandlers()
+  registerSupplierProductHandlers()
 }

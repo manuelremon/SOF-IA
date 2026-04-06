@@ -53,4 +53,12 @@ export function registerProductHandlers(): void {
     try { return { ok: true, data: productService.lowStockProducts() } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
+  ipcMain.handle('products:bulkPricePreview', async (_e, filters, adjustment) => {
+    try { return { ok: true, data: productService.bulkPricePreview(filters, adjustment) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+  ipcMain.handle('products:bulkPriceApply', async (_e, updates) => {
+    try { return { ok: true, data: productService.bulkPriceApply(updates) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
 }

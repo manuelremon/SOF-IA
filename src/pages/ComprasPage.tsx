@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import {
-  Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Badge, Select
+  Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Badge, Select,
+  Modal, Text, Loader
 } from '@mantine/core'
-import { IconPlus, IconSearch, IconEye, IconEdit } from '@tabler/icons-react'
+import { IconPlus, IconSearch, IconEye, IconEdit, IconRobot } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { useDisclosure } from '@mantine/hooks'
 import POFormModal from '../components/compras/POFormModal'
 import PODetailModal from '../components/compras/PODetailModal'
@@ -36,6 +38,9 @@ export default function ComprasPage(): JSX.Element {
   const [formOpened, formHandlers] = useDisclosure(false)
   const [detailOpened, detailHandlers] = useDisclosure(false)
   const [receiveOpened, receiveHandlers] = useDisclosure(false)
+  const [autopilotOpened, autopilotHandlers] = useDisclosure(false)
+  const [autopilotPreview, setAutopilotPreview] = useState<any[]>([])
+  const [autopilotLoading, setAutopilotLoading] = useState(false)
 
   const load = (): void => {
     window.api.purchaseOrders
@@ -81,13 +86,53 @@ export default function ComprasPage(): JSX.Element {
     })
   }
 
+  const openAutopilot = async (): Promise<void> => {
+    setAutopilotLoading(true)
+    autopilotHandlers.open()
+    const r = await window.api.autopilot.preview()
+    if (r.ok) setAutopilotPreview(r.data as any[])
+    setAutopilotLoading(false)
+  }
+
+  const confirmAutopilot = async (): Promise<void> => {
+    setAutopilotLoading(true)
+    const r = await window.api.autopilot.generate(null)
+    if (r.ok) {
+      const ids = r.data as number[]
+      notifications.show({
+        title: 'Pedidos generados',
+        message: `Se crearon ${ids.length} orden(es) de compra en borrador`,
+        color: 'green'
+      })
+      autopilotHandlers.close()
+      setAutopilotPreview([])
+      load()
+    } else {
+      notifications.show({ title: 'Error', message: (r as any).error, color: 'red' })
+    }
+    setAutopilotLoading(false)
+  }
+
+  const fmt = (n: number): string =>
+    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
+
   return (
     <Stack gap="md">
       <Group justify="space-between">
         <Title order={3}>Órdenes de Compra</Title>
-        <Button leftSection={<IconPlus size={16} />} color="sap" onClick={openNew}>
-          Nueva orden
-        </Button>
+        <Group>
+          <Button
+            variant="light"
+            color="violet"
+            leftSection={<IconRobot size={16} />}
+            onClick={openAutopilot}
+          >
+            Piloto automático
+          </Button>
+          <Button leftSection={<IconPlus size={16} />} color="sap" onClick={openNew}>
+            Nueva orden
+          </Button>
+        </Group>
       </Group>
 
       <Group>
@@ -177,6 +222,57 @@ export default function ComprasPage(): JSX.Element {
         purchaseOrder={receivePO}
         onReceived={load}
       />
+      <Modal
+        opened={autopilotOpened}
+        onClose={autopilotHandlers.close}
+        title="Piloto Automático de Compras"
+        size="lg"
+      >
+        {autopilotLoading ? (
+          <Group justify="center" py="xl"><Loader /></Group>
+        ) : autopilotPreview.length === 0 ? (
+          <Text c="dimmed" ta="center" py="xl">
+            No hay productos que requieran reposición en este momento.
+          </Text>
+        ) : (
+          <Stack>
+            <Text size="sm" c="dimmed">
+              Se generarán {autopilotPreview.length} orden(es) de compra en borrador:
+            </Text>
+            {autopilotPreview.map((preview: any) => (
+              <Paper key={preview.supplierId} withBorder p="sm">
+                <Text fw={600} mb="xs">{preview.supplierName}</Text>
+                <Table fz="sm">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Producto</Table.Th>
+                      <Table.Th ta="right">Cant.</Table.Th>
+                      <Table.Th ta="right">Costo unit.</Table.Th>
+                      <Table.Th ta="right">Subtotal</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {preview.items.map((item: any) => (
+                      <Table.Tr key={item.productId}>
+                        <Table.Td>{item.productName}</Table.Td>
+                        <Table.Td ta="right">{item.suggestedQty}</Table.Td>
+                        <Table.Td ta="right">{fmt(item.lastUnitCost)}</Table.Td>
+                        <Table.Td ta="right">{fmt(item.suggestedQty * item.lastUnitCost)}</Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+                <Group justify="flex-end" mt="xs">
+                  <Text fw={600}>Total: {fmt(preview.estimatedTotal)}</Text>
+                </Group>
+              </Paper>
+            ))}
+            <Button color="violet" onClick={confirmAutopilot} loading={autopilotLoading}>
+              Generar pedidos en borrador
+            </Button>
+          </Stack>
+        )}
+      </Modal>
     </Stack>
   )
 }

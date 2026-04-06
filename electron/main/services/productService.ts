@@ -244,3 +244,79 @@ export function lowStockProducts() {
     .orderBy(asc(schema.products.stock))
     .all()
 }
+
+/* -- Bulk Price Update ------------------------------------------------ */
+
+export function bulkPricePreview(filters: {
+  categoryId?: number
+  all?: boolean
+}, adjustment: {
+  type: 'porcentaje' | 'monto'
+  value: number
+  target: 'salePrice' | 'costPrice' | 'both'
+}) {
+  const db = getDb()
+  const conditions = [eq(schema.products.isActive, true)]
+  if (filters.categoryId) conditions.push(eq(schema.products.categoryId, filters.categoryId))
+
+  const products = db
+    .select({
+      id: schema.products.id,
+      name: schema.products.name,
+      costPrice: schema.products.costPrice,
+      salePrice: schema.products.salePrice,
+      categoryName: schema.categories.name
+    })
+    .from(schema.products)
+    .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
+    .where(and(...conditions))
+    .orderBy(asc(schema.products.name))
+    .all()
+
+  return products.map((p) => {
+    const newCostPrice = (adjustment.target === 'costPrice' || adjustment.target === 'both')
+      ? applyAdjustment(p.costPrice, adjustment.type, adjustment.value)
+      : p.costPrice
+    const newSalePrice = (adjustment.target === 'salePrice' || adjustment.target === 'both')
+      ? applyAdjustment(p.salePrice, adjustment.type, adjustment.value)
+      : p.salePrice
+
+    return {
+      id: p.id,
+      name: p.name,
+      categoryName: p.categoryName,
+      currentCostPrice: p.costPrice,
+      currentSalePrice: p.salePrice,
+      newCostPrice: Math.round(newCostPrice * 100) / 100,
+      newSalePrice: Math.round(newSalePrice * 100) / 100
+    }
+  })
+}
+
+export function bulkPriceApply(productUpdates: Array<{
+  id: number
+  newCostPrice: number
+  newSalePrice: number
+}>) {
+  const db = getDb()
+  return getSqlite().transaction(() => {
+    for (const p of productUpdates) {
+      db.update(schema.products)
+        .set({
+          costPrice: p.newCostPrice,
+          salePrice: p.newSalePrice,
+          updatedAt: sql`(datetime('now','localtime'))`
+        })
+        .where(eq(schema.products.id, p.id))
+        .run()
+    }
+    return { updated: productUpdates.length }
+  })()
+}
+
+function applyAdjustment(currentPrice: number, type: 'porcentaje' | 'monto', value: number): number {
+  if (type === 'porcentaje') {
+    return currentPrice * (1 + value / 100)
+  }
+  return currentPrice + value
+}

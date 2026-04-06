@@ -13,7 +13,7 @@ import {
   Divider
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
-import { IconSearch, IconCamera, IconBarcode, IconPackage } from '@tabler/icons-react'
+import { IconSearch, IconCamera, IconBarcode, IconPackage, IconAlertTriangle } from '@tabler/icons-react'
 import type { Product } from '../../types'
 
 const fmt = (n: number) =>
@@ -199,6 +199,11 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
                     )}
                   </div>
                   <Group gap="xs" wrap="nowrap">
+                    {p.costPrice > 0 && ((p.salePrice - p.costPrice) / p.salePrice) * 100 <= 5 && (
+                      <Tooltip label="Margen muy bajo" position="left">
+                        <span><IconAlertTriangle size={14} color="#fa5252" /></span>
+                      </Tooltip>
+                    )}
                     <Badge
                       size="sm"
                       variant="light"

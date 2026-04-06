@@ -86,6 +86,7 @@ export const customers = sqliteTable('customers', {
 export const suppliers = sqliteTable('suppliers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
+  cuit: text('cuit'),
   phone: text('phone'),
   email: text('email'),
   address: text('address'),
@@ -201,6 +202,10 @@ export const goodsReceipts = sqliteTable('goods_receipts', {
     .references(() => purchaseOrders.id),
   userId: integer('user_id').references(() => users.id),
   receiptNumber: text('receipt_number').notNull(),
+  supplierRemito: text('supplier_remito'),
+  supplierInvoice: text('supplier_invoice'),
+  totalAmount: real('total_amount'),
+  paymentMethod: text('payment_method'),
   notes: text('notes'),
   createdAt: text('created_at')
     .notNull()
@@ -222,7 +227,9 @@ export const goodsReceiptItems = sqliteTable('goods_receipt_items', {
   productId: integer('product_id')
     .notNull()
     .references(() => products.id),
-  quantityReceived: real('quantity_received').notNull()
+  quantityReceived: real('quantity_received').notNull(),
+  unitCost: real('unit_cost'),
+  expirationDate: text('expiration_date')
 })
 
 /* ------------------------------------------------------------------ */
@@ -257,6 +264,85 @@ export const appSettings = sqliteTable('app_settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
   updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
+})
+
+/* ------------------------------------------------------------------ */
+/*  Customer Accounts (Cuentas Corrientes / Fiado)                     */
+/* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/*  Supplier Products (Catálogo del proveedor)                         */
+/* ------------------------------------------------------------------ */
+
+export const supplierProducts = sqliteTable('supplier_products', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  supplierId: integer('supplier_id')
+    .notNull()
+    .references(() => suppliers.id),
+  productId: integer('product_id')
+    .notNull()
+    .references(() => products.id),
+  supplierCode: text('supplier_code'),
+  supplierPrice: real('supplier_price').notNull().default(0),
+  notes: text('notes'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
+})
+
+/* ------------------------------------------------------------------ */
+/*  Customer Accounts (Cuentas Corrientes / Fiado)                     */
+/* ------------------------------------------------------------------ */
+
+export const customerAccounts = sqliteTable('customer_accounts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  customerId: integer('customer_id')
+    .notNull()
+    .references(() => customers.id)
+    .unique(),
+  balance: real('balance').notNull().default(0),
+  creditLimit: real('credit_limit').notNull().default(0),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
+})
+
+export const customerAccountMovements = sqliteTable('customer_account_movements', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  customerAccountId: integer('customer_account_id')
+    .notNull()
+    .references(() => customerAccounts.id),
+  saleId: integer('sale_id').references(() => sales.id),
+  type: text('type').notNull(), // 'cargo' | 'abono'
+  amount: real('amount').notNull(),
+  description: text('description'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
+})
+
+/* ------------------------------------------------------------------ */
+/*  Audit Logs                                                         */
+/* ------------------------------------------------------------------ */
+
+export const auditLogs = sqliteTable('audit_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id),
+  entityType: text('entity_type').notNull(), // 'product', 'sale', etc.
+  entityId: integer('entity_id').notNull(),
+  action: text('action').notNull(), // 'create', 'update', 'delete', 'adjust_stock'
+  oldValue: text('old_value'), // JSON string
+  newValue: text('new_value'), // JSON string
+  notes: text('notes'),
+  createdAt: text('created_at')
     .notNull()
     .default(sql`(datetime('now','localtime'))`)
 })

@@ -48,6 +48,7 @@ export interface Customer {
 export interface Supplier {
   id: number
   name: string
+  cuit: string | null
   phone: string | null
   email: string | null
   address: string | null
@@ -98,6 +99,7 @@ export interface CartItem {
   productId: number
   productName: string
   unitPrice: number
+  costPrice: number
   quantity: number
   stock: number
   discountType?: DiscountType

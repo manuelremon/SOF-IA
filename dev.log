@@ -1,0 +1,61 @@
+
+> sof-ia@1.0.0 dev
+> electron-vite dev
+
+[36mvite v6.4.1 [32mbuilding SSR bundle for development...[36m[39m
+transforming...
+[32mÔ£ô[39m 44 modules transformed.
+rendering chunks...
+[2mout/main/[22m[36mindex.js  [39m[1m[2m127.64 kB[22m[1m[22m
+[32mÔ£ô built in 322ms[39m
+[32m
+electron main process built successfully[39m
+[90m
+-----
+[39m
+[36mvite v6.4.1 [32mbuilding SSR bundle for development...[36m[39m
+transforming...
+[32mÔ£ô[39m 1 modules transformed.
+rendering chunks...
+[2mout/preload/[22m[36mindex.js  [39m[1m[2m8.59 kB[22m[1m[22m
+[32mÔ£ô built in 13ms[39m
+[32m
+electron preload scripts built successfully[39m
+[90m
+-----
+[39m
+[32mdev server running for the electron renderer process at:
+[39m
+  [32mÔ×£[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32mÔ×£[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[32m
+starting electron app...
+[39m
+
+(node:7944) UnhandledPromiseRejectionWarning: DrizzleError: Failed to run the query '
+CREATE TABLE `cash_registers` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`user_id` integer,
+	`opened_at` text DEFAULT (datetime('now','localtime')) NOT NULL,
+	`closed_at` text,
+	`opening_amount` real DEFAULT 0 NOT NULL,
+	`closing_amount` real,
+	`expected_amount` real,
+	`difference` real,
+	`cash_sales` real DEFAULT 0 NOT NULL,
+	`card_sales` real DEFAULT 0 NOT NULL,
+	`transfer_sales` real DEFAULT 0 NOT NULL,
+	`total_sales` real DEFAULT 0 NOT NULL,
+	`sales_count` integer DEFAULT 0 NOT NULL,
+	`notes` text,
+	`status` text DEFAULT 'abierta' NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE no action
+);
+'
+    at BetterSQLiteSession.run (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\drizzle-orm\sqlite-core\session.cjs:98:13)
+    at SQLiteSyncDialect.migrate (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\drizzle-orm\sqlite-core\dialect.cjs:604:21)
+    at Object.migrate (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\drizzle-orm\better-sqlite3\migrator.cjs:27:14)
+    at initDb (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\out\main\index.js:412:14)
+    at C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\out\main\index.js:3272:3
+(Use `electron --trace-warnings ...` to show where the warning was created)
+(node:7944) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)

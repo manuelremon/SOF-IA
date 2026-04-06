@@ -57,18 +57,7 @@ export function completeSale(data: {
   const total = subtotalAfterDiscount + taxTotal
   const change = data.paymentMethod === 'efectivo' ? Math.max(0, data.amountTendered - total) : 0
 
-  // Validate stock before starting transaction
-  for (const item of data.items) {
-    const product = db
-      .select({ stock: schema.products.stock, name: schema.products.name })
-      .from(schema.products)
-      .where(eq(schema.products.id, item.productId))
-      .get()
-    if (!product) throw new Error(`Producto no encontrado: ${item.productName}`)
-    if (product.stock < item.quantity) {
-      throw new Error(`Stock insuficiente para "${product.name}": disponible ${product.stock}, solicitado ${item.quantity}`)
-    }
-  }
+
 
   const result = getSqlite().transaction(() => {
     const sale = db
@@ -112,13 +101,21 @@ export function completeSale(data: {
 
     // Decrement stock
     for (const item of data.items) {
-      db.update(schema.products)
+      const updatedProduct = db.update(schema.products)
         .set({
           stock: sql`stock - ${item.quantity}`,
           updatedAt: sql`(datetime('now','localtime'))`
         })
         .where(eq(schema.products.id, item.productId))
-        .run()
+        .returning({ stock: schema.products.stock, name: schema.products.name })
+        .get()
+
+      if (!updatedProduct) {
+        throw new Error(`Producto no encontrado: ${item.productName}`)
+      }
+      if (updatedProduct.stock < 0) {
+        throw new Error(`Stock insuficiente para "${updatedProduct.name}" (negativo detectado)`)
+      }
     }
 
     return { ...sale, items }
@@ -129,7 +126,7 @@ export function completeSale(data: {
 
 export function listSales(filters?: { from?: string; to?: string; paymentMethod?: string; customerId?: number }) {
   const db = getDb()
-  const conditions = []
+  const conditions: import('drizzle-orm').SQL[] = []
   if (filters?.from) conditions.push(gte(schema.sales.createdAt, filters.from))
   if (filters?.to) conditions.push(lte(schema.sales.createdAt, filters.to))
   if (filters?.paymentMethod) conditions.push(eq(schema.sales.paymentMethod, filters.paymentMethod))
@@ -250,6 +247,36 @@ export function topProducts(limit = 10, from?: string, to?: string) {
   params.push(String(limit))
 
   return sqlite.prepare(query).all(...params)
+}
+
+export function getSaleProfitability(saleId: number) {
+  const sqlite = getSqlite()
+  const items = sqlite
+    .prepare(
+      `SELECT si.product_name as productName, si.quantity, si.unit_price as unitPrice,
+              si.line_total as lineTotal, p.cost_price as costPrice,
+              (si.quantity * p.cost_price) as costTotal,
+              (si.line_total - si.quantity * p.cost_price) as profit
+       FROM sale_items si
+       JOIN products p ON p.id = si.product_id
+       WHERE si.sale_id = ?`
+    )
+    .all(saleId) as Array<{
+    productName: string
+    quantity: number
+    unitPrice: number
+    lineTotal: number
+    costPrice: number
+    costTotal: number
+    profit: number
+  }>
+
+  const totalRevenue = items.reduce((s, i) => s + i.lineTotal, 0)
+  const totalCost = items.reduce((s, i) => s + i.costTotal, 0)
+  const totalProfit = totalRevenue - totalCost
+  const marginPercent = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
+
+  return { items, totalRevenue, totalCost, totalProfit, marginPercent }
 }
 
 function generateReceiptNumber(): string {

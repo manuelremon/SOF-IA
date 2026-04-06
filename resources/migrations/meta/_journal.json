@@ -15,6 +15,13 @@
       "when": 1771882801636,
       "tag": "0001_skinny_young_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775509360340,
+      "tag": "0002_mushy_mister_fear",
+      "breakpoints": true
     }
   ]
 }

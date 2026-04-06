@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import {
   Modal, TextInput, Textarea, Button, Stack, Group, Select, NumberInput,
-  Table, ActionIcon, Text
+  Table, ActionIcon, Text, Tooltip, Alert
 } from '@mantine/core'
+import { IconAlertTriangle } from '@tabler/icons-react'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { IconPlus, IconTrash } from '@tabler/icons-react'
@@ -27,12 +28,25 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
   const { user } = useAuthStore()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [supplierCatalog, setSupplierCatalog] = useState<any[]>([])
   const [lines, setLines] = useState<LineItem[]>([{ productId: null, productName: '', quantityOrdered: 1, unitCost: 0 }])
+  const [newSupOpened, setNewSupOpened] = useState(false)
+  const [newSupName, setNewSupName] = useState('')
+  const [newSupPhone, setNewSupPhone] = useState('')
+  const [newSupEmail, setNewSupEmail] = useState('')
+  const [newSupAddress, setNewSupAddress] = useState('')
+  const [newSupNotes, setNewSupNotes] = useState('')
+  const [newSupCuit, setNewSupCuit] = useState('')
+  const [newSupLoading, setNewSupLoading] = useState(false)
+  const [priceWarnings, setPriceWarnings] = useState<Array<{ productName: string; currentPrice: number; cheapestPrice: number; cheapestSupplier: string }>>([])
+  const [warningConfirmed, setWarningConfirmed] = useState(false)
+
+  const today = new Date().toISOString().slice(0, 10)
 
   const form = useForm({
     initialValues: {
       supplierId: '' as string,
-      orderDate: '',
+      orderDate: today,
       expectedDate: '',
       notes: ''
     }
@@ -46,6 +60,8 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
       window.api.products.list({ isActive: true }).then((r: any) => {
         if (r.ok) setProducts(r.data)
       })
+
+      setSupplierCatalog([])
 
       if (purchaseOrder) {
         form.setValues({
@@ -71,6 +87,19 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
     }
   }, [opened, purchaseOrder])
 
+  // Load supplier catalog when supplier changes
+  useEffect(() => {
+    const supplierId = Number(form.values.supplierId)
+    if (supplierId > 0) {
+      window.api.supplierProducts.list(supplierId).then((r: any) => {
+        if (r.ok && r.data) setSupplierCatalog(r.data as any[])
+        else setSupplierCatalog([])
+      })
+    } else {
+      setSupplierCatalog([])
+    }
+  }, [form.values.supplierId])
+
   const addLine = (): void => {
     setLines([...lines, { productId: null, productName: '', quantityOrdered: 1, unitCost: 0 }])
   }
@@ -83,9 +112,13 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
   const updateLine = (idx: number, field: keyof LineItem, value: any): void => {
     const updated = [...lines]
     if (field === 'productId' && value) {
-      const p = products.find((pr) => pr.id === Number(value))
+      const productId = Number(value)
+      const p = products.find((pr) => pr.id === productId)
       if (p) {
-        updated[idx] = { ...updated[idx], productId: p.id, productName: p.name, unitCost: p.costPrice }
+        // Use supplier price if available, otherwise product cost price
+        const catalogItem = supplierCatalog.find((c: any) => c.productId === productId)
+        const unitCost = catalogItem ? catalogItem.supplierPrice : p.costPrice
+        updated[idx] = { ...updated[idx], productId: p.id, productName: p.name, unitCost }
       }
     } else {
       (updated[idx] as any)[field] = value
@@ -93,19 +126,44 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
     setLines(updated)
   }
 
+  const handleCreateSupplier = async (): Promise<void> => {
+    if (!newSupName.trim()) return
+    setNewSupLoading(true)
+    try {
+      const res = await window.api.suppliers.create({
+        name: newSupName.trim(),
+        cuit: newSupCuit.trim() || null,
+        phone: newSupPhone.trim() || null,
+        email: newSupEmail.trim() || null,
+        address: newSupAddress.trim() || null,
+        notes: newSupNotes.trim() || null
+      })
+      if (res.ok && res.data) {
+        const created = res.data as any
+        setSuppliers((prev) => [...prev, created])
+        form.setFieldValue('supplierId', String(created.id))
+        setNewSupOpened(false)
+        setNewSupName('')
+        setNewSupPhone('')
+        setNewSupEmail('')
+        setNewSupAddress('')
+        setNewSupNotes('')
+        setNewSupCuit('')
+        notifications.show({ title: 'Proveedor creado', message: created.name, color: 'green' })
+      } else {
+        notifications.show({ title: 'Error', message: (res as any).error || 'No se pudo crear', color: 'red' })
+      }
+    } catch {
+      notifications.show({ title: 'Error', message: 'Error al crear proveedor', color: 'red' })
+    }
+    setNewSupLoading(false)
+  }
+
   const subtotal = lines.reduce((sum, l) => sum + l.quantityOrdered * l.unitCost, 0)
 
-  const handleSubmit = async (): Promise<void> => {
+  const doSubmit = async (): Promise<void> => {
     const supplierId = Number(form.values.supplierId)
-    if (!supplierId) {
-      notifications.show({ title: 'Error', message: 'Seleccioná un proveedor', color: 'red' })
-      return
-    }
     const validLines = lines.filter((l) => l.productId && l.quantityOrdered > 0)
-    if (validLines.length === 0) {
-      notifications.show({ title: 'Error', message: 'Agregá al menos un producto', color: 'red' })
-      return
-    }
 
     const payload = {
       ...(purchaseOrder ? { id: purchaseOrder.id } : {}),
@@ -132,6 +190,8 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
           message: `Total: $${subtotal.toFixed(2)}`,
           color: 'green'
         })
+        setPriceWarnings([])
+        setWarningConfirmed(false)
         onSaved()
         onClose()
       } else {
@@ -142,10 +202,68 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
     }
   }
 
-  const productOptions = products.map((p) => ({
-    value: String(p.id),
-    label: `${p.name} (Stock: ${p.stock})`
-  }))
+  const handleSubmit = async (): Promise<void> => {
+    const supplierId = Number(form.values.supplierId)
+    if (!supplierId) {
+      notifications.show({ title: 'Error', message: 'Seleccioná un proveedor', color: 'red' })
+      return
+    }
+    const validLines = lines.filter((l) => l.productId && l.quantityOrdered > 0)
+    if (validLines.length === 0) {
+      notifications.show({ title: 'Error', message: 'Agregá al menos un producto', color: 'red' })
+      return
+    }
+
+    // If already confirmed warnings, just submit
+    if (warningConfirmed) {
+      await doSubmit()
+      return
+    }
+
+    // Check for cheaper suppliers
+    const productIds = validLines.map((l) => l.productId!).filter(Boolean)
+    const res = await window.api.supplierProducts.cheapest(productIds)
+    if (!res.ok) { await doSubmit(); return }
+
+    const cheapestMap = res.data as Record<number, { supplierId: number; supplierName: string; supplierPrice: number }>
+    const warnings: typeof priceWarnings = []
+
+    for (const line of validLines) {
+      if (!line.productId) continue
+      const cheapest = cheapestMap[line.productId]
+      if (cheapest && cheapest.supplierId !== supplierId && cheapest.supplierPrice < line.unitCost) {
+        warnings.push({
+          productName: line.productName,
+          currentPrice: line.unitCost,
+          cheapestPrice: cheapest.supplierPrice,
+          cheapestSupplier: cheapest.supplierName
+        })
+      }
+    }
+
+    if (warnings.length > 0) {
+      setPriceWarnings(warnings)
+      return // Don't submit yet, show warnings
+    }
+
+    await doSubmit()
+  }
+
+  // If supplier has catalog, show only their products; otherwise show all
+  const hasSupplierCatalog = supplierCatalog.length > 0
+  const catalogProductIds = new Set(supplierCatalog.map((c: any) => c.productId))
+  const filteredProducts = hasSupplierCatalog
+    ? products.filter((p) => catalogProductIds.has(p.id))
+    : products
+
+  const productOptions = filteredProducts.map((p) => {
+    const catalogItem = supplierCatalog.find((c: any) => c.productId === p.id)
+    const priceLabel = catalogItem ? `$${catalogItem.supplierPrice}` : `$${p.costPrice}`
+    return {
+      value: String(p.id),
+      label: `${p.name} (${priceLabel} — Stock: ${p.stock})`
+    }
+  })
 
   const supplierOptions = suppliers.map((s) => ({
     value: String(s.id),
@@ -155,16 +273,24 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
   return (
     <Modal opened={opened} onClose={onClose} title={purchaseOrder ? 'Editar orden de compra' : 'Nueva orden de compra'} size="xl">
       <Stack>
-        <Group grow>
-          <Select
-            label="Proveedor"
-            placeholder="Seleccionar proveedor"
-            data={supplierOptions}
-            searchable
-            required
-            value={form.values.supplierId}
-            onChange={(val) => form.setFieldValue('supplierId', val || '')}
-          />
+        <Group grow align="flex-end">
+          <Group gap="xs" align="flex-end" style={{ flex: 1 }}>
+            <Select
+              label="Proveedor"
+              placeholder="Seleccionar proveedor"
+              data={supplierOptions}
+              searchable
+              required
+              value={form.values.supplierId}
+              onChange={(val) => form.setFieldValue('supplierId', val || '')}
+              style={{ flex: 1 }}
+            />
+            <Tooltip label="Nuevo proveedor">
+              <ActionIcon variant="light" color="green" size="lg" h={36} onClick={() => setNewSupOpened(true)}>
+                <IconPlus size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
           <TextInput
             label="Fecha de orden"
             type="date"
@@ -173,9 +299,59 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
           <TextInput
             label="Fecha esperada"
             type="date"
+            min={today}
             {...form.getInputProps('expectedDate')}
           />
         </Group>
+
+        <Modal opened={newSupOpened} onClose={() => setNewSupOpened(false)} title="Nuevo proveedor" size="md">
+          <Stack>
+            <TextInput
+              label="Nombre"
+              placeholder="Nombre del proveedor"
+              value={newSupName}
+              onChange={(e) => setNewSupName(e.currentTarget.value)}
+              required
+              data-autofocus
+            />
+            <TextInput
+              label="CUIT"
+              placeholder="Ej: 20-12345678-9"
+              value={newSupCuit}
+              onChange={(e) => setNewSupCuit(e.currentTarget.value)}
+            />
+            <Group grow>
+              <TextInput
+                label="Teléfono"
+                placeholder="Ej: 11 2345-6789"
+                value={newSupPhone}
+                onChange={(e) => setNewSupPhone(e.currentTarget.value)}
+              />
+              <TextInput
+                label="Email"
+                placeholder="proveedor@email.com"
+                value={newSupEmail}
+                onChange={(e) => setNewSupEmail(e.currentTarget.value)}
+              />
+            </Group>
+            <TextInput
+              label="Dirección"
+              placeholder="Dirección del proveedor"
+              value={newSupAddress}
+              onChange={(e) => setNewSupAddress(e.currentTarget.value)}
+            />
+            <Textarea
+              label="Notas"
+              placeholder="Observaciones, condiciones de pago, etc."
+              value={newSupNotes}
+              onChange={(e) => setNewSupNotes(e.currentTarget.value)}
+              rows={2}
+            />
+            <Button color="green" onClick={handleCreateSupplier} loading={newSupLoading} disabled={!newSupName.trim()}>
+              Crear y seleccionar
+            </Button>
+          </Stack>
+        </Modal>
 
         <Textarea label="Notas" {...form.getInputProps('notes')} />
 
@@ -247,10 +423,30 @@ export default function POFormModal({ opened, onClose, purchaseOrder, onSaved }:
           <Text fw={700}>Subtotal: ${subtotal.toFixed(2)}</Text>
         </Group>
 
+        {priceWarnings.length > 0 && !warningConfirmed && (
+          <Alert variant="light" color="orange" icon={<IconAlertTriangle size={18} />} title="Hay proveedores con mejor precio">
+            <Stack gap={4}>
+              {priceWarnings.map((w, i) => (
+                <Text size="sm" key={i}>
+                  <Text span fw={600}>{w.productName}</Text>: estás pagando <Text span fw={700} c="red">${w.currentPrice.toFixed(2)}</Text> pero <Text span fw={600} c="green">{w.cheapestSupplier}</Text> lo tiene a <Text span fw={700} c="green">${w.cheapestPrice.toFixed(2)}</Text>
+                </Text>
+              ))}
+              <Group mt="xs">
+                <Button size="xs" variant="light" color="orange" onClick={() => { setWarningConfirmed(true) }}>
+                  Entendido, crear igual
+                </Button>
+                <Button size="xs" variant="subtle" onClick={() => setPriceWarnings([])}>
+                  Volver a editar
+                </Button>
+              </Group>
+            </Stack>
+          </Alert>
+        )}
+
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose}>Cancelar</Button>
           <Button color="sap" onClick={handleSubmit}>
-            {purchaseOrder ? 'Guardar cambios' : 'Crear orden'}
+            {warningConfirmed ? 'Confirmar y crear' : (purchaseOrder ? 'Guardar cambios' : 'Crear orden')}
           </Button>
         </Group>
       </Stack>

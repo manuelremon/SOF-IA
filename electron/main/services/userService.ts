@@ -1,11 +1,7 @@
 import { eq, asc, sql } from 'drizzle-orm'
-import { createHash } from 'crypto'
+import { hashPin, comparePin } from '../utils/auth'
 import { getDb } from '../db/connection'
 import * as schema from '../db/schema'
-
-function hashPin(pin: string): string {
-  return createHash('sha256').update(pin).digest('hex')
-}
 
 export function listUsers() {
   const db = getDb()
@@ -91,7 +87,7 @@ export function authenticate(name: string, pin: string) {
 
   if (!user) return null
   if (!user.isActive) return null
-  if (user.pin !== hashPin(pin)) return null
+  if (!comparePin(pin, user.pin)) return null
 
   return { id: user.id, name: user.name, role: user.role }
 }
@@ -100,7 +96,7 @@ export function changePin(data: { id: number; currentPin: string; newPin: string
   const db = getDb()
   const user = db.select().from(schema.users).where(eq(schema.users.id, data.id)).get()
   if (!user) throw new Error('Usuario no encontrado')
-  if (user.pin !== hashPin(data.currentPin)) throw new Error('PIN actual incorrecto')
+  if (!comparePin(data.currentPin, user.pin)) throw new Error('PIN actual incorrecto')
 
   db.update(schema.users)
     .set({ pin: hashPin(data.newPin), updatedAt: sql`(datetime('now','localtime'))` })

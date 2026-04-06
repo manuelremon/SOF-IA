@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
-  Modal, Stack, Group, Text, Table, Button, NumberInput, Textarea, Badge
+  Modal, Stack, Group, Text, Table, Button, NumberInput, Textarea, Badge,
+  TextInput, Select
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconCheck } from '@tabler/icons-react'
@@ -22,12 +23,17 @@ interface ReceiveLine {
   quantityReceived: number
   pending: number
   toReceive: number
+  unitCost: number
+  expirationDate: string
 }
 
 export default function ReceiveGoodsModal({ opened, onClose, purchaseOrder, onReceived }: ReceiveGoodsModalProps): JSX.Element {
   const { user } = useAuthStore()
   const [lines, setLines] = useState<ReceiveLine[]>([])
   const [notes, setNotes] = useState('')
+  const [remito, setRemito] = useState('')
+  const [invoice, setInvoice] = useState('')
+  const [payMethod, setPayMethod] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -42,10 +48,15 @@ export default function ReceiveGoodsModal({ opened, onClose, purchaseOrder, onRe
             quantityOrdered: i.quantityOrdered,
             quantityReceived: i.quantityReceived,
             pending: i.quantityOrdered - i.quantityReceived,
-            toReceive: i.quantityOrdered - i.quantityReceived
+            toReceive: i.quantityOrdered - i.quantityReceived,
+            unitCost: i.unitCost,
+            expirationDate: ''
           }))
       )
       setNotes('')
+      setRemito('')
+      setInvoice('')
+      setPayMethod(null)
     }
   }, [opened, purchaseOrder])
 
@@ -71,10 +82,16 @@ export default function ReceiveGoodsModal({ opened, onClose, purchaseOrder, onRe
         purchaseOrderId: purchaseOrder.id,
         userId: user?.id,
         notes: notes || undefined,
+        supplierRemito: remito || undefined,
+        supplierInvoice: invoice || undefined,
+        totalAmount: itemsToReceive.reduce((s, l) => s + l.toReceive * l.unitCost, 0) || undefined,
+        paymentMethod: payMethod || undefined,
         items: itemsToReceive.map((l) => ({
           purchaseOrderItemId: l.purchaseOrderItemId,
           productId: l.productId,
-          quantityReceived: l.toReceive
+          quantityReceived: l.toReceive,
+          unitCost: l.unitCost,
+          expirationDate: l.expirationDate || undefined
         }))
       })
 
@@ -115,7 +132,9 @@ export default function ReceiveGoodsModal({ opened, onClose, purchaseOrder, onRe
               <Table.Th ta="right">Pedido</Table.Th>
               <Table.Th ta="right">Ya recibido</Table.Th>
               <Table.Th ta="right">Pendiente</Table.Th>
-              <Table.Th w={140}>A recibir</Table.Th>
+              <Table.Th w={100}>A recibir</Table.Th>
+              <Table.Th w={100}>Precio unit.</Table.Th>
+              <Table.Th w={130}>Vencimiento</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -138,6 +157,32 @@ export default function ReceiveGoodsModal({ opened, onClose, purchaseOrder, onRe
                     onChange={(val) => updateToReceive(idx, Number(val) || 0)}
                   />
                 </Table.Td>
+                <Table.Td>
+                  <NumberInput
+                    size="xs"
+                    min={0}
+                    decimalScale={2}
+                    prefix="$"
+                    value={line.unitCost}
+                    onChange={(val) => {
+                      const updated = [...lines]
+                      updated[idx] = { ...updated[idx], unitCost: Number(val) || 0 }
+                      setLines(updated)
+                    }}
+                  />
+                </Table.Td>
+                <Table.Td>
+                  <TextInput
+                    size="xs"
+                    type="date"
+                    value={line.expirationDate}
+                    onChange={(e) => {
+                      const updated = [...lines]
+                      updated[idx] = { ...updated[idx], expirationDate: e.currentTarget.value }
+                      setLines(updated)
+                    }}
+                  />
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
@@ -147,6 +192,36 @@ export default function ReceiveGoodsModal({ opened, onClose, purchaseOrder, onRe
           <Text c="dimmed" ta="center">Todos los productos ya fueron recibidos</Text>
         )}
 
+        <Group grow>
+          <TextInput
+            label="Nº Remito"
+            placeholder="Ej: R-00012345"
+            value={remito}
+            onChange={(e) => setRemito(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Nº Factura"
+            placeholder="Ej: A-0001-00012345"
+            value={invoice}
+            onChange={(e) => setInvoice(e.currentTarget.value)}
+          />
+        </Group>
+        <Group grow>
+          <Select
+            label="Método de pago"
+            placeholder="Seleccionar"
+            clearable
+            value={payMethod}
+            onChange={setPayMethod}
+            data={[
+              { value: 'efectivo', label: 'Efectivo' },
+              { value: 'transferencia', label: 'Transferencia' },
+              { value: 'cheque', label: 'Cheque' },
+              { value: 'cuenta_corriente', label: 'Cuenta corriente' },
+              { value: 'otro', label: 'Otro' }
+            ]}
+          />
+        </Group>
         <Textarea
           label="Notas de recepción"
           placeholder="Observaciones (opcional)"

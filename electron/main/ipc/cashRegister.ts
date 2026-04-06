@@ -18,4 +18,8 @@ export function registerCashRegisterHandlers(): void {
     try { return { ok: true, data: cashRegisterService.listRegisters(limit) } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
+  ipcMain.handle('cashRegister:liveSnapshot', async () => {
+    try { return { ok: true, data: cashRegisterService.getLiveSnapshot() } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
 }
