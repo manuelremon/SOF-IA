@@ -4,6 +4,13 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb } from './db/connection'
 import { registerAllHandlers } from './ipc'
 
+// FORZAR RENDERIZADO NÍTIDO EN CHROMIUM (WINDOWS)
+app.commandLine.appendSwitch('disable-font-subpixel-positioning')
+app.commandLine.appendSwitch('enable-features', 'WinUseBrowserSpellChecker')
+
+// HABILITAR API EXPERIMENTAL PARA CÁMARA WEB (BarcodeDetector)
+app.commandLine.appendSwitch('enable-experimental-web-platform-features')
+
 let mainWindow: BrowserWindow | null = null
 
 function sendNavigate(path: string): void {
@@ -25,9 +32,11 @@ function createWindow(): void {
     show: false,
     autoHideMenuBar: true,
     title: 'SOF-IA',
+    icon: join(__dirname, '../../resources/assets/IconoSof-IA.jpg'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      webviewTag: true
     }
   })
 

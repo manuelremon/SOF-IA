@@ -3,10 +3,12 @@ import {
   Modal, TextInput, NumberInput, Select, Button, Stack, Group, Text,
   Table, ActionIcon, Divider, Badge
 } from '@mantine/core'
-import { IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconBarcode } from '@tabler/icons-react'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
+import { useSettingsStore } from '../../stores/settingsStore'
 import type { Product, Category, Supplier } from '../../types'
+import CameraScanner from '../pos/CameraScanner'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
@@ -31,6 +33,8 @@ export default function ProductFormModal({ opened, onClose, product, categories,
       stock: 0,
       minStock: 0,
       unit: 'unidad',
+      brand: '',
+      presentation: '',
       description: ''
     }
   })
@@ -40,6 +44,11 @@ export default function ProductFormModal({ opened, onClose, product, categories,
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([])
   const [addSupplierId, setAddSupplierId] = useState<string | null>(null)
   const [addSupPrice, setAddSupPrice] = useState<number>(0)
+  const [cameraOpened, setCameraOpened] = useState(false)
+
+  const { settings } = useSettingsStore()
+  const scannerMode = settings?.scanner_mode || 'both'
+  const allowCamera = scannerMode === 'both' || scannerMode === 'camera'
 
   useEffect(() => {
     if (opened) {
@@ -54,6 +63,8 @@ export default function ProductFormModal({ opened, onClose, product, categories,
           stock: product.stock,
           minStock: product.minStock,
           unit: product.unit,
+          brand: product.brand || '',
+          presentation: product.presentation || '',
           description: product.description || ''
         })
         loadProductSuppliers()
@@ -122,7 +133,12 @@ export default function ProductFormModal({ opened, onClose, product, categories,
     <Modal opened={opened} onClose={onClose} title={product ? 'Editar producto' : 'Nuevo producto'} size={product ? 'lg' : 'md'}>
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
-          <TextInput label="Nombre" required {...form.getInputProps('name')} />
+          <TextInput label="Artículo" placeholder="Ej: Acondicionador" required {...form.getInputProps('name')} />
+          <Group grow>
+            <TextInput label="Marca" placeholder="Ej: Plusbelle" {...form.getInputProps('brand')} />
+            <TextInput label="Presentación" placeholder="Ej: 1L, 900ml" {...form.getInputProps('presentation')} />
+          </Group>
+          <TextInput label="Desc. Adicional" placeholder="Sabores, características..." {...form.getInputProps('description')} />
           <Select
             label="Categoría"
             placeholder="Sin categoría"
@@ -131,7 +147,17 @@ export default function ProductFormModal({ opened, onClose, product, categories,
             {...form.getInputProps('categoryId')}
           />
           <Group grow>
-            <TextInput label="Código de barras" {...form.getInputProps('barcode')} />
+            <TextInput
+              label="Código de barras"
+              rightSection={
+                allowCamera ? (
+                  <ActionIcon onClick={() => setCameraOpened(true)} variant="subtle" color="blue">
+                    <IconBarcode size={16} />
+                  </ActionIcon>
+                ) : undefined
+              }
+              {...form.getInputProps('barcode')}
+            />
             <TextInput label="SKU" {...form.getInputProps('sku')} />
           </Group>
           <Group grow>
@@ -143,7 +169,6 @@ export default function ProductFormModal({ opened, onClose, product, categories,
             <NumberInput label="Stock mínimo" min={0} decimalScale={2} {...form.getInputProps('minStock')} />
           </Group>
           <TextInput label="Unidad" {...form.getInputProps('unit')} />
-          <TextInput label="Descripción" {...form.getInputProps('description')} />
 
           {/* Suppliers section — only when editing */}
           {product && (
@@ -218,6 +243,15 @@ export default function ProductFormModal({ opened, onClose, product, categories,
           </Group>
         </Stack>
       </form>
+
+      <CameraScanner
+        opened={cameraOpened}
+        onScan={(code) => {
+          setCameraOpened(false)
+          form.setFieldValue('barcode', code)
+        }}
+        onClose={() => setCameraOpened(false)}
+      />
     </Modal>
   )
 }

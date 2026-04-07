@@ -179,7 +179,9 @@ export default function StockPage(): JSX.Element {
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Código</Table.Th>
-              <Table.Th>Producto</Table.Th>
+              <Table.Th>Artículo</Table.Th>
+              <Table.Th>Marca</Table.Th>
+              <Table.Th>Presentación</Table.Th>
               <Table.Th>Categoría</Table.Th>
               <Table.Th ta="right">Stock actual</Table.Th>
               <Table.Th ta="right">Mínimo</Table.Th>
@@ -197,7 +199,13 @@ export default function StockPage(): JSX.Element {
                     <Text size="sm" c="dimmed">{p.barcode || p.sku || '—'}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Text fw={500} size="sm">{p.name}</Text>
+                    <Text fw={600} size="sm">{p.name}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{p.brand || '—'}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{p.presentation || '—'}</Text>
                   </Table.Td>
                   <Table.Td><Text size="sm" c="dimmed">{p.categoryName || '—'}</Text></Table.Td>
                   <Table.Td ta="right">

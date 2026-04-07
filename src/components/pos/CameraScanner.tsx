@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Modal, Stack, Text, Button, Group, Select, Alert } from '@mantine/core'
 import { IconCamera, IconCameraOff, IconAlertCircle } from '@tabler/icons-react'
+import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser'
 
 interface CameraScannerProps {
   opened: boolean
@@ -10,10 +11,8 @@ interface CameraScannerProps {
 
 export default function CameraScanner({ opened, onClose, onScan }: CameraScannerProps): JSX.Element {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const animFrameRef = useRef<number>(0)
-  const detectorRef = useRef<any>(null)
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null)
+  const scanControlsRef = useRef<IScannerControls | null>(null)
   const lastCodeRef = useRef('')
   const lastCodeTimeRef = useRef(0)
 
@@ -23,9 +22,14 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
   const [error, setError] = useState('')
   const [lastDetected, setLastDetected] = useState('')
 
-  // Listar cámaras disponibles
+  // Listar cámaras disponibles (y inicializar zxing)
   useEffect(() => {
     if (!opened) return
+
+    if (!codeReaderRef.current) {
+      codeReaderRef.current = new BrowserMultiFormatReader()
+    }
+
     navigator.mediaDevices.enumerateDevices().then((devices) => {
       const videoDevices = devices.filter((d) => d.kind === 'videoinput')
       setCameras(videoDevices)
@@ -37,87 +41,48 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
     })
   }, [opened])
 
-  // Crear BarcodeDetector
-  useEffect(() => {
-    if (!opened) return
-
-    // BarcodeDetector es nativo en Chromium (Electron lo soporta)
-    if ('BarcodeDetector' in window) {
-      detectorRef.current = new (window as any).BarcodeDetector({
-        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'qr_code', 'codabar', 'itf']
-      })
-    } else {
-      setError('BarcodeDetector no disponible en este navegador')
-    }
-  }, [opened])
-
   const stopCamera = useCallback(() => {
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current)
-      animFrameRef.current = 0
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop())
-      streamRef.current = null
-    }
     setIsScanning(false)
+    if (scanControlsRef.current) {
+      scanControlsRef.current.stop()
+      scanControlsRef.current = null
+    }
   }, [])
 
   const startCamera = useCallback(async () => {
-    if (!selectedCamera || !detectorRef.current) return
+    if (!selectedCamera || !codeReaderRef.current || !videoRef.current) return
 
     setError('')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          deviceId: { exact: selectedCamera },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      })
-      streamRef.current = stream
+      setIsScanning(true)
+      const controls = await codeReaderRef.current.decodeFromVideoDevice(
+        selectedCamera,
+        videoRef.current,
+        (result, err) => {
+          if (result) {
+            const code = result.getText()
+            const now = Date.now()
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play()
-        setIsScanning(true)
-        detectLoop()
-      }
-    } catch (err: any) {
-      setError(`Error al acceder a la cámara: ${err.message}`)
-    }
-  }, [selectedCamera])
-
-  const detectLoop = useCallback(() => {
-    const detect = async (): Promise<void> => {
-      if (!videoRef.current || !detectorRef.current || !streamRef.current) return
-
-      try {
-        const barcodes = await detectorRef.current.detect(videoRef.current)
-        if (barcodes.length > 0) {
-          const code = barcodes[0].rawValue
-          const now = Date.now()
-
-          // Evitar lecturas duplicadas en menos de 2 segundos
-          if (code !== lastCodeRef.current || now - lastCodeTimeRef.current > 2000) {
-            lastCodeRef.current = code
-            lastCodeTimeRef.current = now
-            setLastDetected(code)
-            onScan(code)
+            // Evitar lecturas duplicadas en menos de 2 segundos
+            if (code !== lastCodeRef.current || now - lastCodeTimeRef.current > 2000) {
+              lastCodeRef.current = code
+              lastCodeTimeRef.current = now
+              setLastDetected(code)
+              onScan(code)
+            }
           }
         }
-      } catch {
-        // Ignorar errores de detección intermitentes
-      }
-
-      animFrameRef.current = requestAnimationFrame(detect)
+      )
+      scanControlsRef.current = controls
+    } catch (err: any) {
+      setError(`Error al acceder a la cámara: ${err.message}`)
+      setIsScanning(false)
     }
-    detect()
-  }, [onScan])
+  }, [selectedCamera, onScan])
 
-  // Iniciar cámara cuando se selecciona una
+  // Iniciar cámara automáticamente cuando el modal abre y hay una cámara seleccionada
   useEffect(() => {
-    if (opened && selectedCamera && detectorRef.current) {
+    if (opened && selectedCamera) {
       stopCamera()
       startCamera()
     }
@@ -195,8 +160,6 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
             }} />
           )}
         </div>
-
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         {lastDetected && (
           <Alert color="green" variant="light">

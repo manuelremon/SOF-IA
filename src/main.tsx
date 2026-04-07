@@ -8,18 +8,18 @@ import 'dayjs/locale/es'
 import '@mantine/core/styles.css'
 import '@mantine/dates/styles.css'
 import '@mantine/notifications/styles.css'
-import { sapTheme } from './theme/sapTheme'
+import { ThemeProvider } from './components/ThemeProvider'
 import App from './App'
 
 dayjs.locale('es')
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <MantineProvider theme={sapTheme} defaultColorScheme="light">
+    <ThemeProvider>
       <Notifications position="top-right" />
       <HashRouter>
         <App />
       </HashRouter>
-    </MantineProvider>
+    </ThemeProvider>
   </React.StrictMode>
 )

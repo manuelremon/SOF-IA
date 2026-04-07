@@ -2,17 +2,18 @@ import { useState, useEffect } from 'react'
 import {
   Center,
   Paper,
-  Title,
   Text,
   Select,
   PinInput,
   Button,
   Stack,
-  Alert,
-  Box
+  Box,
+  Alert
 } from '@mantine/core'
 import { IconLock, IconAlertCircle } from '@tabler/icons-react'
 import type { AuthUser } from '../stores/authStore'
+import LogoApp from '../../resources/assets/LogoSof-IA.png'
+import './LoginPage.css'
 
 interface LoginPageProps {
   onLogin: (user: AuthUser) => void
@@ -24,6 +25,18 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splashSeen'))
+
+  const handleSplashEnd = () => {
+    sessionStorage.setItem('splashSeen', 'true')
+    setShowSplash(false)
+  }
+
+  useEffect(() => {
+    if (!showSplash) return undefined;
+    const timer = setTimeout(handleSplashEnd, 3500);
+    return () => clearTimeout(timer);
+  }, [showSplash])
 
   useEffect(() => {
     window.api.users.list().then((res: any) => {
@@ -69,14 +82,53 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
         background: 'linear-gradient(135deg, #354A5F 0%, #0A6ED1 100%)'
       }}
     >
+      {showSplash ? (
+        <Box style={{ position: 'absolute', inset: 0, backgroundColor: '#e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div className="loader">
+            <div className="box box0">
+              <div></div>
+            </div>
+            <div className="box box1">
+              <div></div>
+            </div>
+            <div className="box box2">
+              <div></div>
+            </div>
+            <div className="box box3">
+              <div></div>
+            </div>
+            <div className="box box4">
+              <div></div>
+            </div>
+            <div className="box box5">
+              <div></div>
+            </div>
+            <div className="box box6">
+              <div></div>
+            </div>
+            <div className="box box7">
+              <div></div>
+            </div>
+            <div className="ground">
+              <div></div>
+            </div>
+          </div>
+          <Button 
+            variant="subtle" 
+            color="gray"
+            style={{ position: 'absolute', bottom: 20, right: 20 }}
+            onClick={handleSplashEnd}
+          >
+            Omitir
+          </Button>
+        </Box>
+      ) : (
       <Center h="100vh">
         <Paper shadow="xl" p={40} radius="sm" w={400}>
           <Stack align="center" gap="lg">
-            <Box>
-              <Title order={2} ta="center" c="#354A5F">
-                SOF-IA
-              </Title>
-              <Text size="sm" c="dimmed" ta="center">
+            <Box style={{ textAlign: 'center' }}>
+              <img src={LogoApp} alt="SOF-IA" style={{ height: 60, objectFit: 'contain', marginBottom: 8, borderRadius: 8 }} />
+              <Text size="sm" c="dimmed">
                 Inicie sesión para continuar
               </Text>
             </Box>
@@ -129,6 +181,7 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
           </Stack>
         </Paper>
       </Center>
+      )}
     </Box>
   )
 }

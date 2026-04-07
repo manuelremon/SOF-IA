@@ -285,7 +285,11 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
             { value: 'efectivo', label: 'Efectivo' },
             { value: 'tarjeta', label: 'Tarjeta' },
             { value: 'transferencia', label: 'Transferencia' },
-            ...(selectedCustomerId ? [{ value: 'cuenta_corriente', label: 'Cuenta corriente (Fiado)' }] : [])
+            { 
+              value: 'cuenta_corriente', 
+              label: selectedCustomerId ? 'Fiado (Cuenta Corriente)' : 'Fiado (Selecciona un cliente arriba)', 
+              disabled: !selectedCustomerId 
+            }
           ]}
         />
 

@@ -13,6 +13,7 @@ import ComprasPage from './pages/ComprasPage'
 import RecepcionesPage from './pages/RecepcionesPage'
 import ReportesPage from './pages/ReportesPage'
 import CajaPage from './pages/CajaPage'
+import AyudaPage from './pages/AyudaPage'
 import { useAuthStore, type AuthUser } from './stores/authStore'
 
 function App(): JSX.Element {
@@ -43,6 +44,7 @@ function App(): JSX.Element {
         <Route path="/caja" element={<CajaPage />} />
         {isAdmin && <Route path="/usuarios" element={<UsuariosPage />} />}
         {isAdmin && <Route path="/configuracion" element={<ConfiguracionPage />} />}
+        <Route path="/ayuda" element={<AyudaPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

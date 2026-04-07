@@ -22,4 +22,12 @@ export function registerCashRegisterHandlers(): void {
     try { return { ok: true, data: cashRegisterService.getLiveSnapshot() } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
+  ipcMain.handle('cashRegister:addCash', async (_e, data) => {
+    try { return { ok: true, data: cashRegisterService.addCash(data) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+  ipcMain.handle('cashRegister:movements', async (_e, filters) => {
+    try { return { ok: true, data: cashRegisterService.getMovements(filters) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
 }

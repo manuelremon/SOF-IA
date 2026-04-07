@@ -9,11 +9,12 @@ import {
   Badge,
   Tooltip,
   Divider,
-  Box
+  Box,
+  useMantineTheme,
+  useMantineColorScheme
 } from '@mantine/core'
 import {
   IconLayoutDashboard,
-  IconShoppingCart,
   IconPackage,
   IconBoxMultiple,
   IconUsers,
@@ -23,12 +24,15 @@ import {
   IconCash,
   IconReportAnalytics,
   IconSettings,
-  IconUserCog,
   IconLogout,
+  IconHelpCircle,
   IconChevronLeft,
   IconChevronRight
 } from '@tabler/icons-react'
 import { useAuthStore } from '../stores/authStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import LogoApp from '../../resources/assets/LogoSof-IA.png'
+import AIChatDrawer from './AIChatDrawer'
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Admin',
@@ -75,7 +79,7 @@ export default function AppShell(): JSX.Element {
     const updateTitle = () => {
       const now = new Date()
       const dateStr = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' })
-      const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
+      const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
       document.title = `${businessName}               - ${dateStr}     -     ${timeStr}`
     }
     
@@ -111,14 +115,22 @@ export default function AppShell(): JSX.Element {
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
 
+  const theme = useMantineTheme()
+  const { colorScheme } = useMantineColorScheme()
+
+  const isDark = colorScheme === 'dark'
+  const primaryVariant = theme.colors[theme.primaryColor] || theme.colors.sap
+  const navBg = isDark ? theme.colors.dark[8] : (theme.primaryColor === 'sap' ? '#0056D6' : primaryVariant[9])
+  const mainBg = isDark ? theme.colors.dark[7] : '#f1f3f5'
+
   return (
     <MantineAppShell
       navbar={{ width: collapsed ? 70 : 220, breakpoint: 0 }}
       padding="md"
       styles={{
-        main: { backgroundColor: '#F5F6F7' },
+        main: { backgroundColor: mainBg },
         navbar: {
-          backgroundColor: '#354A5F',
+          backgroundColor: navBg,
           borderRight: 'none',
           transition: 'width 200ms ease'
         }
@@ -132,12 +144,13 @@ export default function AppShell(): JSX.Element {
               justify={collapsed ? 'center' : 'space-between'}
               px={collapsed ? 0 : 'md'}
               py="sm"
+              wrap="nowrap"
               style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
             >
               {!collapsed && (
-                <Text fw={700} size="sm" c="white" truncate>
-                  {businessName}
-                </Text>
+                <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                  <img src={LogoApp} alt={businessName} style={{ maxHeight: 42, maxWidth: '100%', objectFit: 'contain' }} />
+                </div>
               )}
               <UnstyledButton onClick={() => setCollapsed((v) => !v)} p={4}>
                 {collapsed
@@ -274,34 +287,73 @@ export default function AppShell(): JSX.Element {
                   </UnstyledButton>
                 </Tooltip>
               )}
-              <Tooltip label="Cerrar sesión" position="right" disabled={!collapsed}>
-                <UnstyledButton
-                  onClick={handleLogout}
-                  px={collapsed ? 0 : 12}
-                  py={6}
-                  style={{
-                    borderRadius: 6,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: collapsed ? 'center' : 'flex-start',
-                    gap: 10,
-                    width: '100%',
-                    backgroundColor: 'transparent'
-                  }}
-                  styles={{
-                    root: {
-                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' }
-                    }
-                  }}
-                >
-                  <IconLogout size={18} color="#fa5252" />
-                  {!collapsed && (
-                    <Text size="sm" c="red.4">Cerrar sesión</Text>
-                  )}
-                </UnstyledButton>
-              </Tooltip>
-            </Box>
-          </div>
+              </Box>
+
+              <Box p="md" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                {/* Asistente y WhatsApp */}
+                <Box pb="md">
+                  <AIChatDrawer collapsed={collapsed} />
+                </Box>
+
+                <Tooltip label="Ayuda" position="right" disabled={!collapsed}>
+                  <UnstyledButton
+                    onClick={() => navigate('/ayuda')}
+                    px={collapsed ? 0 : 12}
+                    py={6}
+                    mb={4}
+                    style={{
+                      borderRadius: 6,
+                      backgroundColor: location.pathname.startsWith('/ayuda') ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      gap: 10,
+                      width: '100%',
+                      transition: 'background-color 150ms ease'
+                    }}
+                    styles={{
+                      root: {
+                        '&:hover': { backgroundColor: location.pathname.startsWith('/ayuda') ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)' }
+                      }
+                    }}
+                  >
+                    <IconHelpCircle size={18} color={location.pathname.startsWith('/ayuda') ? '#ffffff' : '#adb5bd'} />
+                    {!collapsed && (
+                      <Text size="sm" c={location.pathname.startsWith('/ayuda') ? 'white' : 'gray.4'} fw={location.pathname.startsWith('/ayuda') ? 600 : 400}>
+                        Ayuda
+                      </Text>
+                    )}
+                  </UnstyledButton>
+                </Tooltip>
+
+                <Tooltip label="Cerrar sesión" position="right" disabled={!collapsed}>
+                  <UnstyledButton
+                    onClick={handleLogout}
+                    px={collapsed ? 0 : 12}
+                    py={6}
+                    style={{
+                      borderRadius: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: collapsed ? 'center' : 'flex-start',
+                      gap: 10,
+                      width: '100%',
+                      backgroundColor: 'transparent'
+                    }}
+                    styles={{
+                      root: {
+                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' }
+                      }
+                    }}
+                  >
+                    <IconLogout size={18} color="#fa5252" />
+                    {!collapsed && (
+                      <Text size="sm" c="red.4">Cerrar sesión</Text>
+                    )}
+                  </UnstyledButton>
+                </Tooltip>
+              </Box>
+            </div>
         </Stack>
       </MantineAppShell.Navbar>
 

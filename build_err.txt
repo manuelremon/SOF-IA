@@ -1,0 +1,85 @@
+
+> sof-ia@1.0.0 build
+> electron-vite build
+
+[36mvite v6.4.1 [32mbuilding SSR bundle for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 46 modules transformed.
+rendering chunks...
+[2mout/main/[22m[36mindex.js  [39m[1m[2m134.00 kB[22m[1m[22m
+[32mÔ£ô built in 292ms[39m
+[36mvite v6.4.1 [32mbuilding SSR bundle for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 1 modules transformed.
+rendering chunks...
+[2mout/preload/[22m[36mindex.js  [39m[1m[2m8.94 kB[22m[1m[22m
+[32mÔ£ô built in 13ms[39m
+[36mvite v6.4.1 [32mbuilding for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 29 modules transformed.
+Ô£ù Build failed in 154ms
+error during build:
+[vite:esbuild] Transform failed with 6 errors:
+C:/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/components/AppShell.tsx:355:12: ERROR: Unexpected closing "div" tag does not match opening "Box" tag
+C:/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/components/AppShell.tsx:356:10: ERROR: Unexpected closing "Stack" tag does not match opening "div" tag
+C:/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/components/AppShell.tsx:357:8: ERROR: Unexpected closing "MantineAppShell.Navbar" tag does not match opening "Stack" tag
+C:/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/components/AppShell.tsx:362:6: ERROR: Unexpected closing "MantineAppShell" tag does not match opening "MantineAppShell.Navbar" tag
+C:/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/components/AppShell.tsx:364:0: ERROR: The character "}" is not valid inside a JSX element
+...
+file: C:/Users/MANUE/Documents/00_TRABAJO/Proyectos/GitHub/SOF-IA/src/components/AppShell.tsx:355:12
+
+Unexpected closing "div" tag does not match opening "Box" tag
+353|                </Tooltip>
+354|              </Box>
+355|            </div>
+   |              ^
+356|          </Stack>
+357|        </MantineAppShell.Navbar>
+
+Unexpected closing "Stack" tag does not match opening "div" tag
+354|              </Box>
+355|            </div>
+356|          </Stack>
+   |            ^
+357|        </MantineAppShell.Navbar>
+358|  
+
+Unexpected closing "MantineAppShell.Navbar" tag does not match opening "Stack" tag
+355|            </div>
+356|          </Stack>
+357|        </MantineAppShell.Navbar>
+   |          ^
+358|  
+359|        <MantineAppShell.Main>
+
+Unexpected closing "MantineAppShell" tag does not match opening "MantineAppShell.Navbar" tag
+360|          <Outlet />
+361|        </MantineAppShell.Main>
+362|      </MantineAppShell>
+   |        ^
+363|    )
+364|  }
+
+The character "}" is not valid inside a JSX element
+362|      </MantineAppShell>
+363|    )
+364|  }
+   |  ^
+365|  
+
+Unexpected end of file before a closing "MantineAppShell" tag
+363|    )
+364|  }
+365|  
+   |  ^
+
+    at failureErrorWithLog (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\vite\node_modules\esbuild\lib\main.js:1467:15)
+    at C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\vite\node_modules\esbuild\lib\main.js:736:50
+    at responseCallbacks.<computed> (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\vite\node_modules\esbuild\lib\main.js:603:9)
+    at handleIncomingPacket (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\vite\node_modules\esbuild\lib\main.js:658:12)
+    at Socket.readFromStdout (C:\Users\MANUE\Documents\00_TRABAJO\Proyectos\GitHub\SOF-IA\node_modules\vite\node_modules\esbuild\lib\main.js:581:7)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

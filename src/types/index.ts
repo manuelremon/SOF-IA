@@ -19,6 +19,8 @@ export interface Product {
   categoryId: number | null
   name: string
   description: string | null
+  brand: string | null
+  presentation: string | null
   barcode: string | null
   sku: string | null
   costPrice: number
@@ -211,5 +213,7 @@ export interface AppSettings {
   tax_rate: string
   currency: string
   receipt_footer: string
-  [key: string]: string
+  sounds_enabled?: string
+  theme?: string
+  [key: string]: string | undefined
 }

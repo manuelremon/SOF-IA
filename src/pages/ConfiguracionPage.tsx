@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Title, Stack, Paper, TextInput, NumberInput, Button, Group, Divider, Text, Tabs } from '@mantine/core'
+import { Title, Stack, Paper, TextInput, NumberInput, Button, Group, Divider, Text, Tabs, Select, Switch, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconDeviceFloppy, IconDatabaseExport, IconDatabaseImport, IconFileSpreadsheet, IconSettings, IconUsers } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconDatabaseExport, IconDatabaseImport, IconFileSpreadsheet, IconSettings, IconUsers, IconPalette, IconVolume } from '@tabler/icons-react'
 import type { AppSettings } from '../types'
 import UsuariosPage from './UsuariosPage'
+import { useSettingsStore } from '../stores/settingsStore'
 
 export default function ConfiguracionPage(): JSX.Element {
   const [settings, setSettings] = useState<AppSettings>({
@@ -13,7 +14,13 @@ export default function ConfiguracionPage(): JSX.Element {
     business_tax_id: '',
     tax_rate: '21',
     currency: 'ARS',
-    receipt_footer: ''
+    receipt_footer: '',
+    theme: 'sap',
+    color_scheme: 'light',
+    sounds_enabled: 'true',
+    font_size_scale: '0',
+    font_family: 'inter',
+    scanner_mode: 'both'
   })
   const [loading, setLoading] = useState(false)
 
@@ -26,8 +33,10 @@ export default function ConfiguracionPage(): JSX.Element {
   const handleSave = async (): Promise<void> => {
     setLoading(true)
     try {
-      const res = await window.api.settings.setBatch(settings)
+      const res = await window.api.settings.setBatch(settings as Record<string, string>)
       if (res.ok) {
+        useSettingsStore.getState().loadSettings()
+        window.api.ai.resetClient?.() // Refrescar la IA internamente
         notifications.show({ title: 'Configuración guardada', message: 'Los cambios se aplicaron correctamente', color: 'green' })
       } else {
         notifications.show({ title: 'Error', message: 'No se pudo guardar', color: 'red' })
@@ -53,6 +62,9 @@ export default function ConfiguracionPage(): JSX.Element {
           </Tabs.Tab>
           <Tabs.Tab value="usuarios" leftSection={<IconUsers size={14} />}>
             Usuarios y Permisos
+          </Tabs.Tab>
+          <Tabs.Tab value="ia" leftSection={<IconSettings size={14} />}>
+            Asistente IA
           </Tabs.Tab>
         </Tabs.List>
 
@@ -114,6 +126,24 @@ export default function ConfiguracionPage(): JSX.Element {
 
             <Paper withBorder p="md">
               <Text fw={600} mb="sm">
+                Hardware y Periféricos
+              </Text>
+              <Select
+                label="Modo de Escáner de Código de Barras"
+                description="Habilita cámara web o escáner físico"
+                data={[
+                  { value: 'both', label: 'Híbrido (Pistola USB + Cámara Web)' },
+                  { value: 'usb', label: 'Solo Pistola Láser (USB)' },
+                  { value: 'camera', label: 'Solo Cámara Web' }
+                ]}
+                value={settings.scanner_mode || 'both'}
+                onChange={(v) => update('scanner_mode', v || 'both')}
+                allowDeselect={false}
+              />
+            </Paper>
+
+            <Paper withBorder p="md">
+              <Text fw={600} mb="sm">
                 Recibos
               </Text>
               <TextInput
@@ -121,6 +151,81 @@ export default function ConfiguracionPage(): JSX.Element {
                 value={settings.receipt_footer}
                 onChange={(e) => update('receipt_footer', e.currentTarget.value)}
               />
+            </Paper>
+
+            <Paper withBorder p="md">
+              <Group mb="sm" gap="xs">
+                <IconPalette size={20} color="gray" />
+                <Text fw={600}>Apariencia y Sistema</Text>
+              </Group>
+              <Stack>
+                <Group justify="space-between" align="flex-start" grow>
+                  <Select
+                    label="Tema visual"
+                    description="Elige la apariencia de la aplicación"
+                    data={[
+                      { value: 'sap', label: 'Estándar' },
+                      { value: 'teal', label: 'Bosque' },
+                      { value: 'orange', label: 'Golden Hour' },
+                      { value: 'violet', label: 'Top' }
+                    ]}
+                    value={settings.theme || 'sap'}
+                    onChange={(v) => update('theme', v || 'sap')}
+                    allowDeselect={false}
+                  />
+                  <Switch
+                    label="Modo Oscuro"
+                    description="Activa el modo nocturno"
+                    size="md"
+                    color="dark.4"
+                    checked={settings.color_scheme === 'dark'}
+                    onChange={(e) => update('color_scheme', e.currentTarget.checked ? 'dark' : 'light')}
+                  />
+                </Group>
+                <Group justify="space-between" align="flex-start" grow>
+                  <Select
+                    label="Tipografía"
+                    description="Fuente del sistema"
+                    data={[
+                      { value: 'inter', label: 'Inter (Por defecto)' },
+                      { value: 'roboto', label: 'Roboto' },
+                      { value: 'open-sans', label: 'Open Sans' },
+                      { value: 'montserrat', label: 'Montserrat' },
+                      { value: 'outfit', label: 'Outfit' }
+                    ]}
+                    value={settings.font_family || 'inter'}
+                    onChange={(v) => update('font_family', v || 'inter')}
+                    allowDeselect={false}
+                  />
+                  <Select
+                    label="Tamaño de letra"
+                    description="Ajuste de escala global"
+                    data={[
+                      { value: '-3', label: 'Extra Pequeña (-3x)' },
+                      { value: '-2', label: 'Muy Pequeña (-2x)' },
+                      { value: '-1', label: 'Pequeña (-1x)' },
+                      { value: '0', label: 'Normal' },
+                      { value: '1', label: 'Grande (+1x)' },
+                      { value: '2', label: 'Muy Grande (+2x)' },
+                      { value: '3', label: 'Extra Grande (+3x)' }
+                    ]}
+                    value={settings.font_size_scale || '0'}
+                    onChange={(v) => update('font_size_scale', v || '0')}
+                    allowDeselect={false}
+                  />
+                </Group>
+                
+                <Tooltip label="Reproducir sonidos al cobrar o realizar acciones" position="top-start" withArrow>
+                  <Switch
+                    label="Sonido"
+                    size="md"
+                    color="sap"
+                    checked={settings.sounds_enabled !== 'false'}
+                    onChange={(e) => update('sounds_enabled', e.currentTarget.checked ? 'true' : 'false')}
+                    thumbIcon={<IconVolume size={12} color={settings.sounds_enabled !== 'false' ? 'white' : 'gray'} />}
+                  />
+                </Tooltip>
+              </Stack>
             </Paper>
 
             <Group justify="flex-end">
@@ -221,6 +326,31 @@ export default function ConfiguracionPage(): JSX.Element {
 
         <Tabs.Panel value="usuarios" pt="md">
           <UsuariosPage />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="ia" pt="md">
+          <Stack gap="md">
+            <Paper withBorder p="md">
+              <Text fw={600} mb="sm">
+                Configuración del Asistente SOF-IA
+              </Text>
+              <Text size="sm" c="dimmed" mb="md">
+                Para que el asistente inteligente funcione, necesitas proveer una clave API válida de Google Gemini o OpenAI. Al guardar, el agente recargará su comportamiento.
+              </Text>
+              <Stack>
+                <TextInput
+                  label="Clave API (API Key)"
+                  placeholder="AIzaSy..."
+                  value={settings.aiApiKey || ''}
+                  onChange={(e) => update('aiApiKey', e.currentTarget.value)}
+                  type="password"
+                />
+                <Button color="blue" mt="md" onClick={handleSave} loading={loading}>
+                  Guardar configuración
+                </Button>
+              </Stack>
+            </Paper>
+          </Stack>
         </Tabs.Panel>
       </Tabs>
     </Stack>

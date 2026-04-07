@@ -41,7 +41,7 @@ export function deleteCategory(id: number) {
 
 export function listProducts(filters?: { categoryId?: number; search?: string; isActive?: boolean }) {
   const db = getDb()
-  const conditions = []
+  const conditions: any[] = []
   if (filters?.categoryId !== undefined) conditions.push(eq(schema.products.categoryId, filters.categoryId))
   if (filters?.search) conditions.push(like(schema.products.name, `%${filters.search}%`))
   if (filters?.isActive !== undefined) conditions.push(eq(schema.products.isActive, filters.isActive))
@@ -53,6 +53,8 @@ export function listProducts(filters?: { categoryId?: number; search?: string; i
       categoryId: schema.products.categoryId,
       name: schema.products.name,
       description: schema.products.description,
+      brand: schema.products.brand,
+      presentation: schema.products.presentation,
       barcode: schema.products.barcode,
       sku: schema.products.sku,
       costPrice: schema.products.costPrice,
@@ -81,6 +83,8 @@ export function getProductById(id: number) {
       categoryId: schema.products.categoryId,
       name: schema.products.name,
       description: schema.products.description,
+      brand: schema.products.brand,
+      presentation: schema.products.presentation,
       barcode: schema.products.barcode,
       sku: schema.products.sku,
       costPrice: schema.products.costPrice,
@@ -105,6 +109,8 @@ export function createProduct(data: {
   name: string
   categoryId?: number
   description?: string
+  brand?: string
+  presentation?: string
   barcode?: string
   sku?: string
   costPrice?: number
@@ -121,6 +127,8 @@ export function createProduct(data: {
       name: data.name,
       categoryId: data.categoryId ?? null,
       description: data.description ?? null,
+      brand: data.brand ?? null,
+      presentation: data.presentation ?? null,
       barcode: data.barcode ?? null,
       sku: data.sku ?? null,
       costPrice: data.costPrice ?? 0,
@@ -139,6 +147,8 @@ export function updateProduct(data: {
   name?: string
   categoryId?: number | null
   description?: string | null
+  brand?: string | null
+  presentation?: string | null
   barcode?: string | null
   sku?: string | null
   costPrice?: number
@@ -156,6 +166,8 @@ export function updateProduct(data: {
   if (fields.name !== undefined) setValues.name = fields.name
   if (fields.categoryId !== undefined) setValues.categoryId = fields.categoryId
   if (fields.description !== undefined) setValues.description = fields.description
+  if (fields.brand !== undefined) setValues.brand = fields.brand
+  if (fields.presentation !== undefined) setValues.presentation = fields.presentation
   if (fields.barcode !== undefined) setValues.barcode = fields.barcode
   if (fields.sku !== undefined) setValues.sku = fields.sku
   if (fields.costPrice !== undefined) setValues.costPrice = fields.costPrice
@@ -186,6 +198,8 @@ export function searchProducts(query: string) {
       id: schema.products.id,
       categoryId: schema.products.categoryId,
       name: schema.products.name,
+      brand: schema.products.brand,
+      presentation: schema.products.presentation,
       barcode: schema.products.barcode,
       sku: schema.products.sku,
       costPrice: schema.products.costPrice,
@@ -203,6 +217,8 @@ export function searchProducts(query: string) {
         eq(schema.products.isActive, true),
         or(
           like(schema.products.name, pattern),
+          like(schema.products.brand, pattern),
+          like(schema.products.presentation, pattern),
           like(schema.products.barcode, pattern),
           like(schema.products.sku, pattern)
         )

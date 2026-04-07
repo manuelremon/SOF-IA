@@ -1,0 +1,336 @@
+﻿ID,Código,SKU,Artículo,Marca,Presentación,Descripción,Costo,Precio Venta,Stock,Stock Mínimo,Categoría
+1,,100001,Alfajor,Jorgito,Unidad,Chocolate,660,1100,23,5,Golosinas
+2,,100002,Alfajor,Jorgito,Unidad,Blanco,660,1100,17,5,Golosinas
+3,,100003,Alfajor,Guaymallen,Unidad,Chocolate,390,650,19,5,Golosinas
+4,,100004,Alfajor,Guaymallen,Unidad,Blanco,390,650,48,5,Golosinas
+5,,100005,Alfajor,Guaymallen,Unidad,Oro,570,950,28,5,Golosinas
+6,,100006,Alfajor,Fantoche,Unidad,Triple,840,1400,18,5,Golosinas
+7,,100007,Alfajor,Havanna,50g,70% Cacao,1560,2600,45,5,Golosinas
+8,,100008,Alfajor,Havanna,50g,Clásico,1500,2500,21,5,Golosinas
+9,,100009,Alfajor,Milka,Unidad,Oreo,1080,1800,39,5,Golosinas
+10,,100010,Alfajor,Terrabusi (Mondelez),Unidad,Clásico,780,1300,10,5,Golosinas
+11,,100011,Alfajor,Capitán del Espacio,Unidad,Chocolate,960,1600,40,5,Golosinas
+12,,100012,Turrón de Maní,Arcor,25g,Clásico,270,450,34,5,Golosinas
+13,,100013,Turrón de Maní,Misky (Arcor),25g,Oblea Rellena Clásica,240,400,33,5,Golosinas
+14,,100014,Chupetín,Pico Dulce,Unidad,Clásico,210,350,42,5,Golosinas
+15,,100015,Chupetín,Lheritier,Unidad,Evolution,192,320,13,5,Golosinas
+16,,100016,Chupetín,Baby Doll,Unidad,Clásico,150,250,49,5,Golosinas
+17,,100017,Caramelo Masticable,Georgalos,Unidad / Bolsa 660g,Palitos de la Selva,2520,4200,19,5,Golosinas
+18,,100018,Caramelo Masticable,Sugus,Bolsa,Clásico,2760,4600,40,5,Golosinas
+19,,100019,Caramelo Masticable,Billiken,Bolsa,Clásico,2340,3900,20,5,Golosinas
+20,,100020,Caramelo Masticable,Georgalos,Unidad,Flynn Paff,150,250,49,5,Golosinas
+21,,100021,Tableta de Chocolate,Milka,100g,Leche,2280,3800,39,5,Golosinas
+22,,100022,Tableta de Chocolate,Milka,100g,Almendras,2520,4200,47,5,Golosinas
+23,,100023,Tableta de Chocolate,Milka,100g,Oreo,2460,4100,43,5,Golosinas
+24,,100024,Tableta de Chocolate,Block (Arcor),38g,Con Maní,960,1600,17,5,Golosinas
+25,,100025,Tableta de Chocolate,Block (Arcor),110g,Con Maní,2580,4300,12,5,Golosinas
+26,,100026,Tableta de Chocolate,Cadbury (Mondelez),Unidad,Frutilla,2370,3950,27,5,Golosinas
+27,,100027,Tableta de Chocolate,Cadbury (Mondelez),Unidad,Yogur,2370,3950,42,5,Golosinas
+28,,100028,Barra de Chocolate,Kinder (Ferrero),Unidad,Bueno,1860,3100,13,5,Golosinas
+29,,100029,Barra de Chocolate,Kinder (Ferrero),Pack x4,Clásico,1320,2200,21,5,Golosinas
+30,,100030,Bombón de Chocolate,Ferrero Rocher,Pack x3,Avellana,2700,4500,47,5,Golosinas
+31,,100031,Bombón de Chocolate,Ferrero Rocher,Caja x12,Avellana,9900,16500,49,5,Golosinas
+32,,100032,Chicles,Beldent (Mondelez),Unidad,Menta,570,950,13,5,Golosinas
+33,,100033,Chicles,Beldent (Mondelez),Unidad,Surtidos,570,950,27,5,Golosinas
+34,,100034,Chicles,Topline (Arcor),Unidad,Fresh,570,950,32,5,Golosinas
+35,,100035,Chicles,Bazooka,Unidad,Tutti Frutti,120,200,19,5,Golosinas
+36,,100036,Caramelo Masticable,Mentos,Tubo x8,Fruta,720,1200,33,5,Golosinas
+37,,100037,Caramelo Masticable,Mentos,Tubo x8,Menta,720,1200,11,5,Golosinas
+38,,100038,Pastillas,Tic Tac (Ferrero),Caja Mini,Menta,660,1100,14,5,Golosinas
+39,,100039,Pastillas,Tic Tac (Ferrero),Caja Mini,Naranja,660,1100,23,5,Golosinas
+40,,100040,Pastillas,DRF,Tubo,Menta,360,600,37,5,Golosinas
+41,,100041,Confites de Chocolate,Rocklets (Arcor),20g,Clásicos,570,950,13,5,Golosinas
+42,,100042,Confites de Chocolate,Rocklets (Arcor),40g,Clásicos,1080,1800,20,5,Golosinas
+43,,100043,Postre de Maní,Mantecol (Georgalos),110g,Clásico,1320,2200,27,5,Golosinas
+44,,100044,Postre de Maní,Mantecol (Georgalos),250g,Clásico,2880,4800,19,5,Golosinas
+45,,100045,Bombón de Chocolate,Bon o Bon (Arcor),Unidad,Negro,330,550,19,5,Golosinas
+46,,100046,Bombón de Chocolate,Bon o Bon (Arcor),Unidad,Blanco,330,550,18,5,Golosinas
+47,,100047,Bombón de Chocolate,Tofi (Arcor),100g,Leche,660,1100,17,5,Golosinas
+48,,100048,Oblea Rellena Bañada,Terrabusi (Mondelez),22g,Rhodesia,570,950,15,5,Golosinas
+49,,100049,Oblea Rellena Bañada,Terrabusi (Mondelez),19g,Tita,510,850,33,5,Golosinas
+50,,100050,Oblea Rellena,Bagley (Arcor),Unidad,Opera,960,1600,40,5,Golosinas
+51,,100051,Bocadito de Chocolate,Felfort,14g,Marroc,420,700,30,5,Golosinas
+52,,100052,Bocadito de Chocolate,Arcor,10g,Cabsha,390,650,24,5,Golosinas
+53,,100053,Gomitas,Mogul (Arcor),Paquete,Ositos,720,1200,20,5,Golosinas
+54,,100054,Gomitas,Mogul (Arcor),Paquete,Moras,720,1200,18,5,Golosinas
+55,,100055,Chupetín,The Topps Co. / Benevia,24g / 25g,Push Pop,1140,1900,33,5,Golosinas
+56,,100056,Tableta de Chocolate,Shot (Mondelez),35g,Con Maní,900,1500,39,5,Golosinas
+57,,100057,Tableta de Chocolate,Shot (Mondelez),100g,Con Maní,2340,3900,19,5,Golosinas
+58,,100058,Oblea Rellena Bañada,Hamlet,Unidad,Chocolate,480,800,32,5,Golosinas
+59,,100059,Confites de Chocolate,Bonafide,80g,Vizzio Maní Crocante,1380,2300,24,5,Golosinas
+60,,100060,Confites de Chocolate,Bonafide,72g / 80g,Vizzio Almendras Bañadas,1860,3100,25,5,Golosinas
+61,,110001,Galletita Rellena,Terrabusi (Mondelez),118g,Oreo Clásica,1110,1850,41,5,Galletitas
+62,,110002,Galletita Rellena,Terrabusi (Mondelez),Pack x3,Oreo Clásica,3120,5200,45,5,Galletitas
+63,,110003,Galletita Dulce,Terrabusi (Mondelez),118g,Pepitos,1050,1750,16,5,Galletitas
+64,,110004,Galletita Dulce,Terrabusi (Mondelez),Pack x3,Pepitos,2940,4900,45,5,Galletitas
+65,,110005,Galletita de Agua,Bagley (Arcor),Tripack,Criollitas,1440,2400,16,5,Galletitas
+66,,110006,Galletita de Agua,Bagley (Arcor),Tripack,Traviata,1380,2300,28,5,Galletitas
+67,,110007,Bizcochos Secos,9 de Oro (Molino Cañuelas),200g,Elaborados con Grasa Bov.,870,1450,21,5,Galletitas
+68,,110008,Bizcochos Secos,9 de Oro (Molino Cañuelas),210g,Dulces Azucarados,870,1450,11,5,Galletitas
+69,,110009,Bizcochos Secos,9 de Oro (Molino Cañuelas),200g,Integrales / Salvado,930,1550,29,5,Galletitas
+70,,110010,Bizcochos Secos,Don Satur,Paquete,Salados,840,1400,23,5,Galletitas
+71,,110011,Bizcochos Secos,Don Satur,Paquete,Dulces,840,1400,37,5,Galletitas
+72,,110012,Bizcochos Secos,Don Satur,Paquete,Negritos,840,1400,33,5,Galletitas
+73,,110013,Galletitas Surtidas,Bagley (Arcor),400g,Surtido Clásico,1740,2900,18,5,Galletitas
+74,,110014,Galletitas Surtidas,Arcor,400g,Surtido Clásico,1680,2800,33,5,Galletitas
+75,,110015,Galletitas Surtidas,Terrabusi (Mondelez),400g,Surtido Clásico,1710,2850,43,5,Galletitas
+76,,110016,Galletita Rellena,Bagley (Arcor),118g,Sonrisas,960,1600,32,5,Galletitas
+77,,110017,Galletita Rellena,Bagley (Arcor),118g,Merengadas,900,1500,47,5,Galletitas
+78,,110018,Galletita Dulce Seca,Chocolinas (Bagley),170g,Chocolate,1320,2200,25,5,Galletitas
+79,,110019,Galletita Dulce Seca,Chocolinas (Bagley),250g,Chocolate,1860,3100,10,5,Galletitas
+80,,110020,Galletita Dulce Seca,Terrabusi (Mondelez),Paquete,Lincoln Clásicas,780,1300,45,5,Galletitas
+81,,110021,Galletita Seca,Bagley (Arcor),141g,Vocación Sabor Vainilla,690,1150,40,5,Galletitas
+82,,110022,Galletita Cracker,Paseo (Molino Cañuelas),200g,Clásicas Libres de Grasas,840,1400,19,5,Galletitas
+83,,110023,Galletita Dulce,Formis (Arcor/Bagley),72g / 102g,Con Chips de Chocolate,750,1250,34,5,Galletitas
+84,,110024,Galletita Dulce,Formis (Arcor/Bagley),72g / 102g,Sabor Frutilla,750,1250,27,5,Galletitas
+85,,110025,Galletita Rellena,Bagley (Arcor),112g,Rumba,870,1450,46,5,Galletitas
+86,,110026,Galletita Rellena,Bagley (Arcor),112g,Amor,930,1550,16,5,Galletitas
+87,,110027,Galletita Rellena,Bagley (Arcor),112g,Mellizas,870,1450,16,5,Galletitas
+88,,110028,Galletita de Salvado,Bagley (Arcor),Paquete,Salvado,1080,1800,30,5,Galletitas
+89,,110029,Galletita Integral,Hogareñas (Bagley),Pack x3,Ricas en Fibra,1560,2600,16,5,Galletitas
+90,,110030,Galletita Cracker,Terrabusi (Mondelez),Paquete,Cerealitas Clásicas,1170,1950,34,5,Galletitas
+91,,110031,Galletita Dulce,Toddy (Georgalos),210g,Chocolate Chispas,1680,2800,20,5,Galletitas
+92,,110032,Galletita Dulce Seca,Okebon (Alicorp),165g,Sabor Leche Baja en Sodio,1020,1700,32,5,Galletitas
+93,,110033,Galletita Dulce Seca,Okebon (Alicorp),165g,Cereales,1140,1900,31,5,Galletitas
+94,,110034,Bizcochos de Grasa,Arcor,180g,Recetas de la Abuela,720,1200,36,5,Galletitas
+95,,110035,Galletita Salada,Terrabusi (Mondelez),Paquete,Rex Galletitas Queso,810,1350,14,5,Galletitas
+96,,110036,Galletita Salada,Saladix (Arcor),Paquete,Sabor Papas,720,1200,26,5,Galletitas
+97,,110037,Galletita Salada,Saladix (Arcor),Paquete,Sabor Pizza,720,1200,41,5,Galletitas
+98,,110038,Galletita de Agua,Arcor,200g,Serranitas Crocantes,660,1100,30,5,Galletitas
+99,,110039,Oblea Rellena,Milka / Lacta (Mondelez),Unidad,Bis,570,950,49,5,Galletitas
+100,,110040,Galletita Especial,The Healthy Kitchen,115g,Chocobon (Keto / Sin Azúcar),780,1300,13,5,Galletitas
+101,,120001,Gaseosa Carbonatada,Coca-Cola (Coca-Cola Co.),500ml,Sabor Cola,1140,1900,41,5,Bebidas
+102,,120002,Gaseosa Carbonatada,Coca-Cola (Coca-Cola Co.),1.5L,Sabor Cola,1860,3100,18,5,Bebidas
+103,,120003,Gaseosa Carbonatada,Coca-Cola (Coca-Cola Co.),2.25L,Sabor Cola,2280,3800,44,5,Bebidas
+104,,120004,Gaseosa Carbonatada,Coca-Cola (Coca-Cola Co.),500ml,Cola Sin Azúcar,1140,1900,27,5,Bebidas
+105,,120005,Gaseosa Carbonatada,Coca-Cola (Coca-Cola Co.),1.5L,Cola Sin Azúcar,1860,3100,46,5,Bebidas
+106,,120006,Gaseosa Carbonatada,Sprite (Coca-Cola Co.),500ml,Lima Limón,1080,1800,31,5,Bebidas
+107,,120007,Gaseosa Carbonatada,Sprite (Coca-Cola Co.),1.5L,Lima Limón,1740,2900,47,5,Bebidas
+108,,120008,Gaseosa Carbonatada,Fanta (Coca-Cola Co.),500ml,Sabor Naranja,1080,1800,13,5,Bebidas
+109,,120009,Gaseosa Carbonatada,Fanta (Coca-Cola Co.),1.5L,Sabor Naranja,1740,2900,21,5,Bebidas
+110,,120010,Gaseosa Carbonatada,Pepsi (PepsiCo),500ml,Sabor Cola,1020,1700,15,5,Bebidas
+111,,120011,Gaseosa Carbonatada,Pepsi (PepsiCo),1.5L,Sabor Cola,1620,2700,44,5,Bebidas
+112,,120012,Gaseosa Carbonatada,7Up (PepsiCo),500ml,Lima Limón,1050,1750,40,5,Bebidas
+113,,120013,Gaseosa Carbonatada,Mirinda (PepsiCo),500ml,Sabor Naranja,990,1650,16,5,Bebidas
+114,,120014,Agua Mineral,Villavicencio (Danone),500ml,Sin Gas,720,1200,18,5,Bebidas
+115,,120015,Agua Mineral,Villavicencio (Danone),1.5L,Sin Gas,1170,1950,49,5,Bebidas
+116,,120016,Agua Mineral,Villa del Sur (Danone),500ml,Sin Gas,690,1150,23,5,Bebidas
+117,,120017,Agua Mineral,Villa del Sur (Danone),1.5L,Sin Gas,1110,1850,34,5,Bebidas
+118,,120018,Agua Mineral,Kin (Coca-Cola Co.),500ml,Con Gas,660,1100,34,5,Bebidas
+119,,120019,Agua Mineral,Kin (Coca-Cola Co.),1.5L,Con Gas,1050,1750,25,5,Bebidas
+120,,120020,Agua Saborizada,Levité (Danone),500ml,Sabor Manzana,840,1400,14,5,Bebidas
+121,,120021,Agua Saborizada,Levité (Danone),1.5L,Sabor Manzana,1410,2350,34,5,Bebidas
+122,,120022,Agua Saborizada,Levité (Danone),1.5L,Sabor Pomelo,1410,2350,43,5,Bebidas
+123,,120023,Agua Saborizada,Aquarius (Coca-Cola Co.),500ml,Sabor Pera,810,1350,34,5,Bebidas
+124,,120024,Agua Saborizada,Aquarius (Coca-Cola Co.),1.5L,Sabor Pera,1350,2250,49,5,Bebidas
+125,,120025,Bebida Energizante,Speed Unlimited,250ml,Clásica,960,1600,19,5,Bebidas
+126,,120026,Bebida Energizante,Speed Unlimited,473ml,Clásica,1440,2400,42,5,Bebidas
+127,,120027,Bebida Energizante,Monster Energy,473ml,Original,1710,2850,35,5,Bebidas
+128,,120028,Bebida Energizante,Red Bull,250ml,Fórmula Original,1770,2950,45,5,Bebidas
+129,,120029,Bebida Isotónica,Gatorade (PepsiCo),500ml,Sabor Manzana,1170,1950,30,5,Bebidas
+130,,120030,Bebida Isotónica,Gatorade (PepsiCo),500ml,Blue / Frutos del Bosque,1170,1950,22,5,Bebidas
+131,,120031,Jugo de Fruta,Cepita (Coca-Cola Co.),1L,Sabor Naranja,1320,2200,13,5,Bebidas
+132,,120032,Jugo de Fruta,Cepita (Coca-Cola Co.),1L,Sabor Durazno,1320,2200,32,5,Bebidas
+133,,120033,Jugo de Fruta,Baggio,1L,Sabor Naranja,1110,1850,31,5,Bebidas
+134,,120034,Jugo de Fruta,Baggio,1L,Sabor Durazno,1110,1850,42,5,Bebidas
+135,,120035,Jugo en Polvo,Tang (Mondelez),Sobre,Rinde 1 Litro - Naranja,270,450,43,5,Bebidas
+136,,120036,Jugo en Polvo,Tang (Mondelez),Sobre,Rinde 1 Litro - Manzana,270,450,30,5,Bebidas
+137,,120037,Jugo en Polvo,Clight (Mondelez),Sobre,Rinde 1 Litro - Pomelo,300,500,47,5,Bebidas
+138,,120038,Cerveza,Quilmes,Lata 473ml,Clásica,1170,1950,34,5,Bebidas
+139,,120039,Cerveza,Brahma,Lata 473ml,Clásica,1110,1850,12,5,Bebidas
+140,,120040,Cerveza,Heineken,Lata 473ml,Original,1740,2900,27,5,Bebidas
+141,,120041,Cerveza,Stella Artois,Lata 473ml,Original,1560,2600,36,5,Bebidas
+142,,120042,Aperitivo,Fernet Branca,750ml,Clásico,7680,12800,36,5,Bebidas
+143,,120043,Aperitivo,Fernet Branca,450ml,Clásico,5340,8900,14,5,Bebidas
+144,,120044,Aperitivo,Gancia,950ml,Americano,3540,5900,19,5,Bebidas
+145,,120045,Aperitivo,Campari,750ml,Clásico,5100,8500,36,5,Bebidas
+146,,120046,Vino Tinto Común,Toro (Fecovita),1L (Tetra Brik),Envasado en Cartón,870,1450,44,5,Bebidas
+147,,120047,Vino Tinto Común,Termidor (Grupo Peñaflor),1L (Tetra Brik),Envasado en Cartón,840,1400,32,5,Bebidas
+148,,120048,Vino Tinto,Estancia Mendoza,750ml,Malbec,2520,4200,14,5,Bebidas
+149,,120049,Vino Tinto,Alma Mora,750ml,Malbec,3900,6500,44,5,Bebidas
+150,,120050,Bebida Alcohólica Mixta,Smirnoff,473ml,Ice,1380,2300,29,5,Bebidas
+151,,130001,Yerba Mate,Playadito,500g,Clásica,2310,3850,30,5,Almacen
+152,,130002,Yerba Mate,Playadito,1kg,Clásica,4440,7400,19,5,Almacen
+153,,130003,Yerba Mate,Taragüi,500g,Clásica,2190,3650,47,5,Almacen
+154,,130004,Yerba Mate,Unión,500g,Suave,2250,3750,32,5,Almacen
+155,,130005,Yerba Mate,Amanda,500g,Clásica,1920,3200,20,5,Almacen
+156,,130006,Yerba Mate,Rosamonte,500g,Clásica,2340,3900,24,5,Almacen
+157,,130007,Azúcar,Ledesma,1kg,Clásica Blanca,930,1550,39,5,Almacen
+158,,130008,Azúcar,Chango,1kg,Clásica Blanca,870,1450,34,5,Almacen
+159,,130009,Harina de Trigo,Blancaflor,1kg,Leudante,1020,1700,14,5,Almacen
+160,,130010,Harina de Trigo,Favorita,1kg,000,750,1250,22,5,Almacen
+161,,130011,Harina de Trigo,Pureza,1kg,Con Levadura,1110,1850,45,5,Almacen
+162,,130012,Aceite Comestible,Natura,900ml,Girasol,2070,3450,38,5,Almacen
+163,,130013,Aceite Comestible,Cocinero,900ml,Girasol Mezcla,1890,3150,10,5,Almacen
+164,,130014,Fideos Secos,Lucchetti,500g,Tallarín,1008,1680,11,5,Almacen
+165,,130015,Fideos Secos,Lucchetti,500g,Tirabuzón,1008,1680,17,5,Almacen
+166,,130016,Fideos Secos,Matarazzo,500g,Spaghetti,1260,2100,42,5,Almacen
+167,,130017,Arroz,Lucchetti,1kg,Largo Fino,1350,2250,30,5,Almacen
+168,,130018,Arroz,Gallo,1kg,Oro (Parboil),2040,3400,11,5,Almacen
+169,,130019,Puré de Tomate,Arcor,520g,Clásico,708,1180,21,5,Almacen
+170,,130020,Puré de Tomate,La Campagnola,520g,Clásico,870,1450,40,5,Almacen
+171,,130021,Sal,Celusal,500g,Fina,588,980,47,5,Almacen
+172,,130022,Mayonesa,Hellmanns (Unilever),475g,Clásica,1530,2550,46,5,Almacen
+173,,130023,Mayonesa,Fanacoa (Unilever),425g,Clásica,960,1600,12,5,Almacen
+174,,130024,Kétchup,Hellmanns (Unilever),250g,Clásico,1050,1750,44,5,Almacen
+175,,130025,Mostaza,Hellmanns (Unilever),250g,Clásica,990,1650,15,5,Almacen
+176,,130026,Salsa,Hellmanns (Unilever),250g,Salsa Golf,1110,1850,42,5,Almacen
+177,,130027,Atún en Conserva,La Campagnola,170g,Trozos al Natural/Aceite,2370,3950,32,5,Almacen
+178,,130028,Atún en Conserva,Gomes da Costa,Lata,Desmenuzado,1320,2200,21,5,Almacen
+179,,130029,Café Instantáneo,Dolca (Nestlé),Frasco 170g,Suave,4170,6950,36,5,Almacen
+180,,130030,Café Molido,La Virginia,Paquete 500g,Filtro,4680,7800,46,5,Almacen
+181,,130031,Té en Saquitos,Taragüi,Caja x25,Clásico,708,1180,32,5,Almacen
+182,,130032,Té en Saquitos,Taragüi,Caja x50,Clásico,1260,2100,38,5,Almacen
+183,,130033,Mate Cocido,Taragüi,Caja x25 saquitos,Clásico,750,1250,40,5,Almacen
+184,,130034,Cacao en Polvo,Nesquik (Nestlé),360g,Clásico,2100,3500,21,5,Almacen
+185,,130035,Cacao en Polvo,El Quillay,180g,Clásico,720,1200,24,5,Almacen
+186,,130036,Leche Líquida,La Serenísima,Sachet 1L,Entera/Descremada,888,1480,33,5,Almacen
+187,,130037,Leche Líquida,Tregar,Caja 1L,Larga Vida,1170,1950,13,5,Almacen
+188,,130038,Dulce de Leche,La Serenísima,Pote 400g,Clásico,1440,2400,23,5,Almacen
+189,,130039,Dulce de Leche,Casanto,Pote 400g,Clásico,1170,1950,14,5,Almacen
+190,,130040,Mermelada,BC (Arcor),Frasco 390g,Frutilla Reducida en Calorías,1980,3300,13,5,Almacen
+191,,130041,Mermelada,Arcor,Frasco 454g,Durazno,1260,2100,19,5,Almacen
+192,,130042,Sal,Celusal,1kg,Gruesa,660,1100,19,5,Almacen
+193,,130043,Vinagre,Menoyo,500ml,De Alcohol,720,1200,43,5,Almacen
+194,,130044,Lentejas Secas,Parsecs,400g,Clásicas,1080,1800,10,5,Almacen
+195,,130045,Garbanzos Secos,Parsecs,400g,Clásicos,1080,1800,27,5,Almacen
+196,,130046,Polenta (Harina de Maíz),Arcor,500g,Mágica 1 Minuto,780,1300,47,5,Almacen
+197,,130047,Caldo en Cubos,Knorr (Unilever),Caja x6,Gallina,660,1100,28,5,Almacen
+198,,130048,Sopa Instantánea,Knorr (Unilever),Sobre Unidad,Quick,390,650,12,5,Almacen
+199,,130049,Salchichas,Swift (Minerva Foods),Paquete x6,Clásicas,1140,1900,25,5,Almacen
+200,,130050,Medallones de Carne,Paty (Marfrig),Paquete x2 un.,Hamburguesas Clásicas,1440,2400,20,5,Almacen
+201,,140001,Papel Higiénico,Campanita,Pack 4u,Clásico,1290,2150,24,5,Limpieza
+202,,140002,Papel Higiénico,Higienol,Pack 4u,Clásico,1710,2850,20,5,Limpieza
+203,,140003,Rollos de Papel Absorbente,Sussex,Pack 3u,Rollo de Cocina,1470,2450,41,5,Limpieza
+204,,140004,Jabón Líquido para Ropa,Ala (Unilever),800ml,Baja Espuma Doypack,2370,3950,29,5,Limpieza
+205,,140005,Jabón Líquido para Ropa,Ariel (P&G),800ml,Clásico Doypack,2700,4500,14,5,Limpieza
+206,,140006,Suavizante para Ropa,Vivere (Unilever),900ml,Clásico,1860,3100,24,5,Limpieza
+207,,140007,Detergente Lavavajillas,Magistral (P&G),300ml,Clásico,1350,2250,29,5,Limpieza
+208,,140008,Detergente Lavavajillas,Ala (Unilever),500ml,Aroma Limón,1080,1800,43,5,Limpieza
+209,,140009,Lavandina Líquida,Ayudín (Clorox),1L,Clásica,870,1450,34,5,Limpieza
+210,,140010,Lavandina para Ropa,Ayudín (Clorox),1L,Ropa Color,1680,2800,46,5,Limpieza
+211,,140011,Desodorante de Pisos,Poett (Clorox),900ml,Aromático,990,1650,17,5,Limpieza
+212,,140012,Desinfectante en Aerosol,Lysoform (SC Johnson),360ml,Clásico,2280,3800,33,5,Limpieza
+213,,140013,Esponja Sintética,Mortimer,Unidad,Multiuso,468,780,40,5,Limpieza
+214,,140014,Lana de Acero,Virulana,Pack x2,Para Limpieza,540,900,42,5,Limpieza
+215,,140015,Jabón Blanco en Pan,Marca Blanca,Pan x200g,Para Lavado de Ropa,528,880,19,5,Limpieza
+216,,140016,Limpiador en Crema,Cif (Unilever),250g,Multiuso,1260,2100,48,5,Limpieza
+217,,140017,Limpiador de Vidrios,Cif (Unilever),Doypack,Líquido,840,1400,26,5,Limpieza
+218,,140018,Bolsas de Residuos,Marca Blanca,Rollo x10,Consorcio 60x90,1320,2200,34,5,Limpieza
+219,,140019,Bolsas de Residuos,Marca Blanca,Rollo x30,Residuos 45x60,1080,1800,14,5,Limpieza
+220,,140020,Insecticida en Aerosol,Raid (SC Johnson),360ml,Matamoscas y Mosquitos,2340,3900,31,5,Limpieza
+221,,140021,Tabletas Repelentes,Raid (SC Johnson),Caja x12,Para Mosquitos,1440,2400,14,5,Limpieza
+222,,140022,Espirales Repelentes,Raid (SC Johnson),Caja x10,Para Mosquitos,780,1300,36,5,Limpieza
+223,,140023,Repuesto Difusor Aromático,Glade (SC Johnson),Unidad,Aromático,2460,4100,22,5,Limpieza
+224,,140024,Pastilla Sanitaria,Harpic (Reckitt Benckiser),Unidad,Para Inodoro,660,1100,32,5,Limpieza
+225,,140025,Guantes de Goma,Marca Blanca,Par Talle M,Para Limpieza,1140,1900,11,5,Limpieza
+226,,150001,Desodorante Corporal,Axe (Unilever),Aerosol 150ml,Apollo,2070,3450,46,5,Perfumeria
+227,,150002,Desodorante Corporal,Axe (Unilever),Aerosol 150ml,Dark Temptation,2070,3450,34,5,Perfumeria
+228,,150003,Desodorante Antitranspirante,Rexona (Unilever),Aerosol,Masculino,2190,3650,24,5,Perfumeria
+229,,150004,Desodorante Antitranspirante,Rexona (Unilever),Aerosol,Femenino,2190,3650,25,5,Perfumeria
+230,,150005,Jabón de Tocador,Lux (Unilever),Pastilla 125g,Aromático,588,980,10,5,Perfumeria
+231,,150006,Jabón de Tocador,Dove (Unilever),Pastilla 90g,Cremoso,1140,1900,24,5,Perfumeria
+232,,150007,Shampoo,Plusbelle,Botella 1L,Clásico,1590,2650,28,5,Perfumeria
+233,,150008,Acondicionador Capilar,Plusbelle,Botella 1L,Clásico,1590,2650,20,5,Perfumeria
+234,,150009,Shampoo,Pantene (P&G),Botella 200ml,Cuidado Clásico,2280,3800,16,5,Perfumeria
+235,,150010,Crema Dental,Colgate,Pomo 90g,Acción Triple,1110,1850,25,5,Perfumeria
+236,,150011,Crema Dental,Colgate,Pomo,Total 12,1920,3200,41,5,Perfumeria
+237,,150012,Cepillo Dental,Colgate,Unidad,Cerdas Suaves/Medias,1260,2100,33,5,Perfumeria
+238,,150013,Máquina de Afeitar,Prestobarba (Gillette/P&G),Unidad,3 Hojas,690,1150,19,5,Perfumeria
+239,,150014,Espuma de Afeitar,Gillette (P&G),Aerosol,Clásica,2520,4200,12,5,Perfumeria
+240,,150015,Toallas Femeninas,Nosotras (Grupo Familia),Paquete x8 un.,Con Alas Clásicas,1170,1950,38,5,Perfumeria
+241,,150016,Protectores Diarios,Carefree,Paquete x20 un.,Clásicos,1260,2100,41,5,Perfumeria
+242,,150017,Tampones,O.B.,Caja x8 un.,Tamaño Medio,1680,2800,36,5,Perfumeria
+243,,150018,Algodón Hidrófilo,Estrella,Paquete 100g,Clásico,1350,2250,11,5,Perfumeria
+244,,150019,Hisopos,Johnson & Johnson,Caja x75 un.,Puntas de Algodón,1440,2400,31,5,Perfumeria
+245,,150020,Preservativos,Prime,Caja x3 un.,Látex Clásico,1680,2800,47,5,Perfumeria
+246,,150021,Gel Íntimo Lubricante,Prime,Pomo,Clásico,2100,3500,48,5,Perfumeria
+247,,150022,Pañales Descartables,Huggies (Kimberly-Clark),Paquete x10 un.,Talla M,3480,5800,20,5,Perfumeria
+248,,150023,Toallitas Húmedas,Babysec,Paquete x50 un.,Cuidado Infantil,1740,2900,42,5,Perfumeria
+249,,150024,Quitaesmalte,Cutex,Frasco,Líquido,1080,1800,40,5,Perfumeria
+250,,150025,Papel Tissue,Elite,Caja Dispensadora,Pañuelos Faciales,1260,2100,35,5,Perfumeria
+251,,160001,Cigarrillos Industriales,Philip Morris (Massalin),20 unidades,Box (Caja Dura),2730,4550,24,5,Cigarrillos
+252,,160002,Cigarrillos Industriales,Philip Morris (Massalin),20 unidades,KS (Empaque Blando),2490,4150,30,5,Cigarrillos
+253,,160003,Cigarrillos Industriales,Philip Morris (Massalin),10 unidades,Box (Caja Dura),1440,2400,39,5,Cigarrillos
+254,,160004,Cigarrillos Industriales,Marlboro (Massalin),20 unidades,Box (Caja Dura),2970,4950,46,5,Cigarrillos
+255,,160005,Cigarrillos Industriales,Marlboro (Massalin),20 unidades,KS (Empaque Blando),2700,4500,40,5,Cigarrillos
+256,,160006,Cigarrillos Industriales,Marlboro (Massalin),20 unidades,Crafted Box,2310,3850,12,5,Cigarrillos
+257,,160007,Cigarrillos Industriales,Chesterfield (Massalin),20 unidades,Box (Caja Dura),2370,3950,45,5,Cigarrillos
+258,,160008,Cigarrillos Industriales,Chesterfield (Massalin),20 unidades,KS (Empaque Blando),2100,3500,39,5,Cigarrillos
+259,,160009,Cigarrillos Industriales,Camel,20 unidades,Box (Caja Dura),2910,4850,20,5,Cigarrillos
+260,,160010,Cigarrillos Industriales,Lucky Strike,20 unidades,Box (Caja Dura),2790,4650,10,5,Cigarrillos
+261,,160011,Cigarrillos Industriales,Red Point,20 unidades,KS (Empaque Blando),1950,3250,20,5,Cigarrillos
+262,,160012,Cigarrillos Industriales,Pier (Bronway Technology),20 unidades,Box (Caja Dura),1890,3150,15,5,Cigarrillos
+263,,160013,Cigarrillos Industriales,Rothmans,20 unidades,Formato 43/70,2280,3800,39,5,Cigarrillos
+264,,160014,Encendedor,Bic,Unidad,Maxi,1290,2150,17,5,Cigarrillos
+265,,160015,Encendedor,Bic,Unidad,Mini,960,1600,28,5,Cigarrillos
+266,,160016,Encendedor,Magiclick,Unidad,Electrónico,750,1250,49,5,Cigarrillos
+267,,160017,Papel para Armar,OCB,Librillo,Negro (Regular),840,1400,43,5,Cigarrillos
+268,,160018,Filtros para Armar,OCB,Bolsa,Formato Slim,780,1300,49,5,Cigarrillos
+269,,160019,Pipa,Marca Blanca,Unidad Chica,Material Pirex,2100,3500,25,5,Cigarrillos
+270,,160020,Tabaco en Hebras para Armar,Sayri,Bolsa 50g,Blend Original Killu (Sin Aditivos),2880,4800,32,5,Cigarrillos
+271,,170001,Papas Fritas,Lay's (PepsiCo),150g,Clásicas,1470,2450,48,5,Snacks
+272,,170002,Papas Fritas,Lay's (PepsiCo),Paquete,Corte Americano,1470,2450,42,5,Snacks
+273,,170003,Snacks de Maíz,Doritos (PepsiCo),150g,Mega Queso,1590,2650,26,5,Snacks
+274,,170004,Snacks de Maíz,Cheetos (PepsiCo),100g,Crunchy Queso,1140,1900,24,5,Snacks
+275,,170005,Snacks de Maíz,3D (PepsiCo),100g,Mega Queso,1170,1950,33,5,Snacks
+276,,170006,Palitos Salados,Pehuamar (PepsiCo),190g,Clásicos,1050,1750,28,5,Snacks
+277,,170007,Maní Salado,Pehuamar (PepsiCo),120g,Pelado y Salado,930,1550,43,5,Snacks
+278,,170008,Palitos de Maíz Extrusados,Bun (PepsiCo),140g,Sabor Queso Intenso,750,1250,30,5,Snacks
+279,,170009,Papas Fritas,Pringles,Tubo 124g,Original,2760,4600,19,5,Snacks
+280,,170010,Papas Fritas,Krachitos,100g,Clásicas,960,1600,12,5,Snacks
+281,,170011,Pochoclos Dulces,Karamel,100g,Acaramelados,840,1400,25,5,Snacks
+282,,170012,Semillas de Girasol,Pipas (Argensun),Paquete,Tostadas y Saladas,510,850,29,5,Snacks
+283,,170013,Maní Cubierto de Chocolate,Block (Arcor),Paquete,Clásico,1080,1800,13,5,Snacks
+284,,170014,Galletitas Horneadas,Twistos (PepsiCo),100g,Sabor Jamón,1020,1700,41,5,Snacks
+285,,170015,Chips de Tortilla de Maíz,Macritas (Cerealko),90g / 250g,Originales (Libres de Gluten),960,1600,11,5,Snacks
+286,,180001,Cuaderno Escolar,Gloria,84 Hojas,Tapa Blanda,1530,2550,34,5,Libreria
+287,,180002,Cuaderno Escolar,Rivadavia (Ángel Estrada),84 Hojas,Tapa Dura Clásico,3900,6500,15,5,Libreria
+288,,180003,Repuesto de Hojas,Rivadavia (Ángel Estrada),Block 96 Hojas,Rayadas/Cuadriculadas,2550,4250,36,5,Libreria
+289,,180004,Repuesto de Hojas,Éxito (Ledesma),Block 96 Hojas,Rayadas/Cuadriculadas,2280,3800,30,5,Libreria
+290,,180005,Bolígrafo,Bic,Unidad,Tinta Azul,510,850,33,5,Libreria
+291,,180006,Bolígrafo,Bic,Unidad,Tinta Negra,510,850,19,5,Libreria
+292,,180007,Lápiz de Grafito,Faber Castell,Unidad,Negro HB,390,650,25,5,Libreria
+293,,180008,Goma de Borrar,Dos Banderas,Unidad,Lápiz/Tinta,288,480,20,5,Libreria
+294,,180009,Corrector Líquido,Liquid Paper,Lápiz/Frasco,Blanco,1110,1850,12,5,Libreria
+295,,180010,Resaltador,Filgo,Unidad,Color Amarillo,690,1150,21,5,Libreria
+296,,180011,Cinta Adhesiva,Marca Blanca,Rollo,Transparente Ancha,1140,1900,15,5,Libreria
+297,,180012,Pegamento Escolar,Plasticola,Pomo 40g,Blanco Sintético,570,950,33,5,Libreria
+298,,180013,Pegamento Sintético,Voligoma,Pomo 30ml,Transparente,720,1200,35,5,Libreria
+299,,180014,Resma de Hojas,Report,500 Hojas,Tamaño A4 Blanca,5940,9900,12,5,Libreria
+300,,180015,Sobre de Papel,Marca Blanca,Unidad,Formato Americano,90,150,41,5,Libreria
+301,,180016,Marcador Permanente,Edding,Unidad,Punta Fina/Gruesa,1440,2400,45,5,Libreria
+302,,180017,Sacapuntas,Marca Blanca,Unidad,Metálico,540,900,32,5,Libreria
+303,,180018,Regla Escolar,Marca Blanca,20cm,Plástica Transparente,480,800,15,5,Libreria
+304,,180019,Abrochadora,MIT,Unidad,Metálica Clásica,3120,5200,33,5,Libreria
+305,,180020,Broches para Abrochadora,MIT,Caja x1000,Talle 10/50,840,1400,28,5,Libreria
+306,,190001,Pan de Molde Lactal,Bimbo,Paquete Grande,Rebanado Blanco,2310,3850,16,5,Panaderia
+307,,190002,Pan de Molde Lactal,Fargo (Grupo Bimbo),Paquete,Rebanado Salvado,2460,4100,47,5,Panaderia
+308,,190003,Pan para Panchos,Bimbo,Paquete x6,Clásico,1350,2250,15,5,Panaderia
+309,,190004,Pan para Hamburguesas,Bimbo,Paquete x4,Con Sésamo,1290,2150,13,5,Panaderia
+310,,190005,Tortillas de Trigo,Rapiditas (Bimbo),Paquete x10,Clásicas,1590,2650,15,5,Panaderia
+311,,190006,Magdalenas,Arcor,Paquete,Sabor Vainilla,1170,1950,29,5,Panaderia
+312,,190007,Budín Dulce,Arcor,Unidad,Sabor Vainilla,1440,2400,35,5,Panaderia
+313,,190008,Galletas Vainillas,Marca Blanca,Paquete x12,Clásicas,930,1550,22,5,Panaderia
+314,,190009,Premezcla para Bizcochuelo,Exquisita (Molino Cañuelas),Caja,Sabor Vainilla,1680,2800,30,5,Panaderia
+315,,190010,Gelatina en Polvo,Royal (Mondelez),Caja,Sabor Frutilla,840,1400,34,5,Panaderia
+316,,190011,Polvo para Flan,Ravana,Caja,Sabor Vainilla,660,1100,24,5,Panaderia
+317,,190012,Postre Refrigerado,Serenito (Danone),Pote,Sabor Vainilla/Chocolate,840,1400,23,5,Panaderia
+318,,190013,Yogur Bebible,Yogurísimo (Danone),Sachet / Botella,Fortificado,1260,2100,48,5,Panaderia
+319,,190014,Yogur Firme,Tregar,Pote,Con Cereales,1080,1800,43,5,Panaderia
+320,,190015,Queso Blanco Untable,Casancrem (Danone),Pote 300g,Clásico,1950,3250,24,5,Panaderia
+321,,190016,Queso de Máquina,Marca Blanca,200g,Tybo Feteado,2040,3400,40,5,Panaderia
+322,,190017,Fiambre,Marca Blanca,200g,Jamón Cocido Feteado,2160,3600,32,5,Panaderia
+323,,190018,Embutido,Marca Blanca,100g,Salame Feteado,1260,2100,20,5,Panaderia
+324,,190019,Tapa para Tarta,Avanti,Paquete,Masa Criolla/Hojaldre,1080,1800,17,5,Panaderia
+325,,190020,Tapas para Empanadas,Avanti,Paquete x12,Masa Criolla/Hojaldre,840,1400,29,5,Panaderia
+326,,200001,Pilas Alcalinas,Eveready (Energizer),Blíster x2,Formato AA,1080,1800,45,5,Varios
+327,,200002,Pilas Alcalinas,Eveready (Energizer),Blíster x2,Formato AAA,1080,1800,17,5,Varios
+328,,200003,Pila Botón,Marca Blanca,Unidad,Para Reloj/Electrónica,840,1400,29,5,Varios
+329,,200004,Adhesivo Instantáneo,La Gotita (Poxipol),Pomo 2ml,Cianoacrilato Transparente,1320,2200,41,5,Varios
+330,,200005,Encendedor de Cocina,Marca Blanca,Unidad,Chispero Largo,1680,2800,48,5,Varios
+331,,200006,Velas de Cera,Marca Blanca,Paquete x6 unidades,Blancas Clásicas,960,1600,22,5,Varios
+332,,200007,Preservativos,Prime,Caja,Modelo Skyn,2100,3500,23,5,Varios
+333,,200008,Encendedor,Clipper,Unidad,Recargable,1920,3200,16,5,Varios
+334,,200009,Fósforos de Madera,Tres Patitos,Caja,Clásicos,360,600,41,5,Varios
+335,,200010,Naipes de Juego,Casino,Mazo,Españolas/Francesas,1440,2400,17,5,Varios

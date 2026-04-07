@@ -79,7 +79,7 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
     <Paper withBorder p="md" h="100%">
       <Stack justify="space-between" h="100%">
         <div>
-          <Text fw={600} mb="sm">
+          <Text fw={600} mb="sm" ta="right">
             Carrito ({items.length} items)
           </Text>
           <Table>

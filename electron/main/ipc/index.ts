@@ -1,3 +1,4 @@
+import { setupAIHandlers } from './ai'
 import { registerProductHandlers } from './products'
 import { registerSalesHandlers } from './sales'
 import { registerCustomerHandlers } from './customers'
@@ -36,4 +37,5 @@ export function registerAllHandlers(): void {
   registerCustomerAccountHandlers()
   registerBackupHandlers()
   registerSupplierProductHandlers()
+  setupAIHandlers()
 }

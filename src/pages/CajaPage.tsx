@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Title, Stack, Card, Group, Text, Button, NumberInput, Table,
-  Badge, SimpleGrid, Textarea, Paper, Alert, Grid, Tabs
+  Badge, SimpleGrid, Textarea, Paper, Alert, Grid, Tabs, Modal, Select, TextInput
 } from '@mantine/core'
-import { IconCash, IconAlertCircle, IconShoppingCart, IconHistory, IconBarcode, IconScale } from '@tabler/icons-react'
+import dayjs from 'dayjs'
+import { IconCash, IconAlertCircle, IconShoppingCart, IconHistory, IconBarcode, IconScale, IconArrowsExchange } from '@tabler/icons-react'
 import { useAuthStore } from '../stores/authStore'
 import { notifications } from '@mantine/notifications'
 import ProductSearch from '../components/pos/ProductSearch'
@@ -12,6 +13,7 @@ import PaymentModal from '../components/pos/PaymentModal'
 import ReceiptModal from '../components/pos/ReceiptModal'
 import CameraScanner from '../components/pos/CameraScanner'
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner'
+import { useSettingsStore } from '../stores/settingsStore'
 import { useCartStore } from '../stores/cartStore'
 import type { Product } from '../types'
 
@@ -25,11 +27,22 @@ export default function CajaPage(): JSX.Element {
   const [closingAmount, setClosingAmount] = useState<number>(0)
   const [closeNotes, setCloseNotes] = useState('')
   const [history, setHistory] = useState<any[]>([])
+  const [movementsData, setMovementsData] = useState<any[]>([])
+  const [movementFilters, setMovementFilters] = useState({
+    type: 'todos',
+    from: dayjs().format('YYYY-MM-DD'),
+    to: dayjs().format('YYYY-MM-DD')
+  })
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<string | null>('cobrar')
   const [snapshot, setSnapshot] = useState<any>(null)
   const [arqueoAmount, setArqueoAmount] = useState<number>(0)
   const [arqueoResult, setArqueoResult] = useState<{ diff: number; shown: boolean }>({ diff: 0, shown: false })
+
+  // Movimientos de caja (Ingreso/Egreso manual)
+  const [movementOpened, setMovementOpened] = useState(false)
+  const [movementAmount, setMovementAmount] = useState<number | ''>('')
+  const [movementNotes, setMovementNotes] = useState('')
 
   // POS state
   const [paymentOpened, setPaymentOpened] = useState(false)
@@ -38,6 +51,10 @@ export default function CajaPage(): JSX.Element {
   const [lastSale, setLastSale] = useState<any>(null)
   const [scanIndicator, setScanIndicator] = useState('')
   const addItem = useCartStore((s) => s.addItem)
+
+  const { settings } = useSettingsStore()
+  const scannerMode = settings?.scanner_mode || 'both'
+  const allowUsb = scannerMode === 'both' || scannerMode === 'usb'
 
   const loadData = async (): Promise<void> => {
     const [resCurrent, resHistory] = await Promise.all([
@@ -53,7 +70,20 @@ export default function CajaPage(): JSX.Element {
     if (r.ok && r.data) setSnapshot(r.data)
   }
 
+  const loadMovementsData = useCallback(async (filters: any = movementFilters) => {
+    setLoading(true)
+    const res = await window.api.cashRegister.movements(filters)
+    if (res.ok) setMovementsData(res.data)
+    setLoading(false)
+  }, [movementFilters])
+
   useEffect(() => { loadData() }, [])
+  
+  useEffect(() => {
+    if (activeTab === 'movimientos') {
+      loadMovementsData(movementFilters)
+    }
+  }, [activeTab, loadMovementsData, movementFilters])
 
   // Refresh snapshot every 10s and on tab change
   useEffect(() => {
@@ -89,7 +119,7 @@ export default function CajaPage(): JSX.Element {
     }
   }, [handleSelectProduct, currentRegister])
 
-  useBarcodeScanner(handleBarcodeScan)
+  useBarcodeScanner(handleBarcodeScan, allowUsb)
 
   const handleComplete = (sale: any): void => {
     setPaymentOpened(false)
@@ -97,6 +127,7 @@ export default function CajaPage(): JSX.Element {
     setReceiptOpened(true)
     loadData()
     refreshSnapshot()
+    loadMovementsData(movementFilters)
   }
 
   const handleCameraScan = useCallback((code: string) => {
@@ -142,6 +173,36 @@ export default function CajaPage(): JSX.Element {
     setLoading(false)
   }
 
+  const handleCashMovement = async (): Promise<void> => {
+    if (!currentRegister || !movementAmount || movementAmount === 0) return
+    setLoading(true)
+    try {
+      const res = await window.api.cashRegister.addCash({
+        id: currentRegister.id,
+        amount: Number(movementAmount),
+        notes: movementNotes || undefined
+      })
+      if (res.ok) {
+        notifications.show({
+          title: 'Movimiento registrado',
+          message: Number(movementAmount) > 0 ? 'Ingreso exitoso' : 'Retiro exitoso',
+          color: 'green'
+        })
+        setMovementOpened(false)
+        setMovementAmount('')
+        setMovementNotes('')
+        loadData()
+        refreshSnapshot()
+        loadMovementsData(movementFilters)
+      } else {
+        notifications.show({ title: 'Error', message: res.error, color: 'red' })
+      }
+    } catch {
+      notifications.show({ title: 'Error', message: 'Error procesando movimiento', color: 'red' })
+    }
+    setLoading(false)
+  }
+
   // No register open — show open form
   if (!currentRegister) {
     return (
@@ -182,51 +243,63 @@ export default function CajaPage(): JSX.Element {
   // Register open — show POS + register info
   return (
     <Stack gap="sm">
-      {/* Cash status bar */}
-      <Group justify="space-between" align="flex-start">
-        <Group gap="sm" align="center">
-          <IconCash size={20} color="#27AE60" />
-          <Title order={4}>Caja</Title>
-          <Badge color="green" size="sm">Abierta</Badge>
-          {scanIndicator && (
-            <Badge size="sm" variant="light" color="blue" leftSection={<IconBarcode size={12} />}>
-              {scanIndicator}
-            </Badge>
-          )}
+      <Tabs value={activeTab} onChange={setActiveTab} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+        {/* Top Header Row */}
+        <Group justify="space-between" align="center" mb="md" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
+          <Tabs.List style={{ borderBottom: 'none' }} pb="xs">
+            <Tabs.Tab value="cobrar" leftSection={<IconShoppingCart size={16} />}>Cobrar</Tabs.Tab>
+            <Tabs.Tab value="caja" leftSection={<IconCash size={16} />}>Cerrar caja</Tabs.Tab>
+            <Tabs.Tab value="movimientos" leftSection={<IconArrowsExchange size={16} />}>Movimientos</Tabs.Tab>
+          </Tabs.List>
+
+          <Group gap="sm" align="center" pb="xs">
+            {scanIndicator && (
+              <Badge size="sm" variant="light" color="blue" leftSection={<IconBarcode size={12} />}>
+                {scanIndicator}
+              </Badge>
+            )}
+            <Title order={2} style={{ fontWeight: 600 }}>Caja</Title>
+            <IconCash size={28} color="#27AE60" stroke={1.5} />
+            <Badge color="green" size="lg" variant="filled" style={{ fontWeight: 800 }}>ABIERTA</Badge>
+          </Group>
         </Group>
 
-        {/* Live cash panel */}
-        {snapshot && (
-          <Paper withBorder p="xs" style={{ backgroundColor: '#f8f9fa' }}>
-            <Group gap="md">
+      {/* Live cash panel */}
+      {snapshot && (
+        <Group justify="center" mb="md">
+          <Paper withBorder p="md" radius="md" shadow="sm" style={{ backgroundColor: '#f8f9fa' }}>
+            <Group gap="lg">
               <div style={{ textAlign: 'center' }}>
-                <Text size="xs" c="dimmed">Efectivo en caja</Text>
-                <Text fw={800} size="xl" c="green">{fmt(snapshot.cashInRegister)}</Text>
+                <Text size="sm" c="dimmed" fw={500}>Efectivo total</Text>
+                <Text fw={800} size="h2" c="green" mb={4}>{fmt(snapshot.cashInRegister)}</Text>
+                <Button size="xs" variant="light" color="blue" onClick={() => setMovementOpened(true)}>
+                  Ingreso / Retiro
+                </Button>
               </div>
-              <div style={{ borderLeft: '1px solid #dee2e6', paddingLeft: 12 }}>
-                <Group gap="xs" mb={2}>
-                  <Text size="xs" c="dimmed" w={65}>Apertura:</Text>
-                  <Text size="xs" fw={600}>{fmt(snapshot.openingAmount)}</Text>
+              <div style={{ borderLeft: '1px solid #dee2e6', paddingLeft: 16 }}>
+                <Group gap="sm" mb={4}>
+                  <Text size="sm" c="dimmed" w={70}>Apertura:</Text>
+                  <Text size="sm" fw={600}>{fmt(snapshot.openingAmount)}</Text>
                 </Group>
-                <Group gap="xs" mb={2}>
-                  <Text size="xs" c="dimmed" w={65}>Efectivo:</Text>
-                  <Text size="xs" fw={600} c="green">+{fmt(snapshot.cashSales)}</Text>
+                <Group gap="sm" mb={4}>
+                  <Text size="sm" c="dimmed" w={70}>Efectivo:</Text>
+                  <Text size="sm" fw={600} c="green">+{fmt(snapshot.cashSales)}</Text>
                 </Group>
-                <Group gap="xs" mb={2}>
-                  <Text size="xs" c="dimmed" w={65}>Tarjeta:</Text>
-                  <Text size="xs" fw={600} c="blue">{fmt(snapshot.cardSales)}</Text>
+                <Group gap="sm" mb={4}>
+                  <Text size="sm" c="dimmed" w={70}>Tarjeta:</Text>
+                  <Text size="sm" fw={600} c="blue">{fmt(snapshot.cardSales)}</Text>
                 </Group>
-                <Group gap="xs">
-                  <Text size="xs" c="dimmed" w={65}>Transf:</Text>
-                  <Text size="xs" fw={600} c="violet">{fmt(snapshot.transferSales)}</Text>
+                <Group gap="sm">
+                  <Text size="sm" c="dimmed" w={70}>Transf:</Text>
+                  <Text size="sm" fw={600} c="violet">{fmt(snapshot.transferSales)}</Text>
                 </Group>
               </div>
-              <div style={{ borderLeft: '1px solid #dee2e6', paddingLeft: 12 }}>
-                <Text size="xs" c="dimmed" mb={4}>Arqueo rápido</Text>
-                <Group gap={4}>
+              <div style={{ borderLeft: '1px solid #dee2e6', paddingLeft: 16 }}>
+                <Text size="sm" c="dimmed" fw={500} mb={6}>Arqueo rápido</Text>
+                <Group gap={8}>
                   <NumberInput
-                    size="xs"
-                    w={100}
+                    size="sm"
+                    w={110}
                     value={arqueoAmount}
                     onChange={(v) => { setArqueoAmount(Number(v) || 0); setArqueoResult({ diff: 0, shown: false }) }}
                     min={0}
@@ -235,9 +308,9 @@ export default function CajaPage(): JSX.Element {
                     placeholder="Conteo"
                   />
                   <Button
-                    size="xs"
+                    size="sm"
                     variant="light"
-                    leftSection={<IconScale size={14} />}
+                    leftSection={<IconScale size={16} />}
                     onClick={() => {
                       refreshSnapshot().then(() => {
                         const expected = snapshot?.cashInRegister ?? 0
@@ -249,7 +322,7 @@ export default function CajaPage(): JSX.Element {
                   </Button>
                 </Group>
                 {arqueoResult.shown && (
-                  <Text size="xs" fw={700} mt={4}
+                  <Text size="sm" fw={700} mt={6}
                     c={arqueoResult.diff === 0 ? 'green' : arqueoResult.diff > 0 ? 'blue' : 'red'}
                   >
                     {arqueoResult.diff === 0 ? 'Sin diferencia'
@@ -259,22 +332,15 @@ export default function CajaPage(): JSX.Element {
                   </Text>
                 )}
               </div>
-              <div style={{ borderLeft: '1px solid #dee2e6', paddingLeft: 12, textAlign: 'center' }}>
-                <Text size="xs" c="dimmed">Ventas</Text>
-                <Text fw={700} size="lg">{snapshot.salesCount}</Text>
-                <Text size="xs" c="dimmed">{fmt(snapshot.totalSales)}</Text>
+              <div style={{ borderLeft: '1px solid #dee2e6', paddingLeft: 16, textAlign: 'center' }}>
+                <Text size="sm" c="dimmed" fw={500}>Ventas</Text>
+                <Text fw={800} size="h3" my={2}>{snapshot.salesCount}</Text>
+                <Text size="sm" fw={600} c="sapphire">{fmt(snapshot.totalSales)}</Text>
               </div>
             </Group>
           </Paper>
-        )}
-      </Group>
-
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-          <Tabs.Tab value="cobrar" leftSection={<IconShoppingCart size={16} />}>Cobrar</Tabs.Tab>
-          <Tabs.Tab value="caja" leftSection={<IconCash size={16} />}>Cerrar caja</Tabs.Tab>
-          <Tabs.Tab value="historial" leftSection={<IconHistory size={16} />}>Historial</Tabs.Tab>
-        </Tabs.List>
+        </Group>
+      )}
 
         <Tabs.Panel value="cobrar" pt="sm">
           <Grid>
@@ -338,8 +404,12 @@ export default function CajaPage(): JSX.Element {
           </Paper>
         </Tabs.Panel>
 
-        <Tabs.Panel value="historial" pt="sm">
-          <RegisterHistoryTable history={history} />
+        <Tabs.Panel value="movimientos" pt="sm">
+          <MovementsViewer 
+             data={movementsData} 
+             filters={movementFilters}
+             onFilter={(newFilters) => setMovementFilters(newFilters)} 
+          />
         </Tabs.Panel>
       </Tabs>
 
@@ -358,6 +428,34 @@ export default function CajaPage(): JSX.Element {
         onClose={() => setCameraOpened(false)}
         onScan={handleCameraScan}
       />
+
+      <Modal opened={movementOpened} onClose={() => setMovementOpened(false)} title="Movimiento de Caja" size="xs">
+        <Stack gap="md">
+          <Alert icon={<IconAlertCircle size={16} />} color="blue" p="sm">
+            Tipea un positivo (+) para Ingreso, o un negativo (-) para Retiro.
+          </Alert>
+          <NumberInput
+            label="Monto"
+            placeholder="Ej: -5000 o 2500"
+            value={movementAmount}
+            onChange={(v) => setMovementAmount(v === '' ? '' : Number(v))}
+            decimalScale={2}
+            prefix="$ "
+            thousandSeparator="."
+            decimalSeparator=","
+          />
+          <Textarea
+            label="Motivo o detalle (opcional)"
+            placeholder="Ej: Retiro para cadete"
+            value={movementNotes}
+            onChange={(e) => setMovementNotes(e.currentTarget.value)}
+            rows={2}
+          />
+          <Button fullWidth onClick={handleCashMovement} loading={loading} disabled={!movementAmount || movementAmount === 0}>
+            Registrar Movimiento
+          </Button>
+        </Stack>
+      </Modal>
     </Stack>
   )
 }
@@ -411,5 +509,90 @@ function RegisterHistoryTable({ history }: { history: any[] }): JSX.Element {
         )}
       </Table.Tbody>
     </Table>
+  )
+}
+
+function MovementsViewer({ data, filters, onFilter }: { data: any[]; filters: any; onFilter: (filters: any) => void }): JSX.Element {
+  const [type, setType] = useState(filters.type)
+  const [dateStr, setDateStr] = useState(filters.from)
+
+  useEffect(() => {
+    setType(filters.type)
+    setDateStr(filters.from)
+  }, [filters])
+
+  const handleApply = () => {
+    onFilter({
+      type,
+      from: dateStr || undefined,
+      to: dateStr || undefined
+    })
+  }
+
+  return (
+    <Stack gap="md">
+      <Paper withBorder p="sm" bg="gray.0">
+        <Group align="flex-end">
+          <Select
+            label="Tipo de movimiento"
+            data={[{ value: 'todos', label: 'Todos' }, { value: 'ingreso', label: 'Ingresos' }, { value: 'egreso', label: 'Egresos' }]}
+            value={type}
+            onChange={(v) => setType(v || 'todos')}
+            w={200}
+          />
+          <TextInput
+            label="Fecha Específica"
+            type="date"
+            value={dateStr}
+            onChange={(e) => setDateStr(e.currentTarget.value)}
+            w={200}
+          />
+          <Button onClick={handleApply}>Filtrar</Button>
+        </Group>
+      </Paper>
+
+      <Table striped highlightOnHover>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Fecha y Hora</Table.Th>
+            <Table.Th>Documento</Table.Th>
+            <Table.Th>Medio</Table.Th>
+            <Table.Th>Tipo</Table.Th>
+            <Table.Th ta="right">Importe</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {data.map((m, i) => (
+            <Table.Tr key={`${m.docType}-${m.refId}-${i}`}>
+              <Table.Td>{m.createdAt?.slice(0, 16)}</Table.Td>
+              <Table.Td>
+                <Group gap="xs">
+                  <Badge color={m.docType === 'Venta' ? 'blue' : 'violet'} variant="light">
+                    {m.docType}
+                  </Badge>
+                  {m.receiptNumber !== 'N/A' && <Text size="sm">{m.receiptNumber}</Text>}
+                </Group>
+              </Table.Td>
+              <Table.Td style={{ textTransform: 'capitalize' }}>{m.paymentMethod}</Table.Td>
+              <Table.Td>
+                <Badge color={m.type === 'ingreso' ? 'green' : 'red'}>
+                  {m.type === 'ingreso' ? 'Ingreso' : 'Egreso'}
+                </Badge>
+              </Table.Td>
+              <Table.Td ta="right" fw={600} c={m.type === 'ingreso' ? 'green' : 'red'}>
+                {m.type === 'egreso' ? '-' : ''}{fmt(m.amount)}
+              </Table.Td>
+            </Table.Tr>
+          ))}
+          {data.length === 0 && (
+            <Table.Tr>
+              <Table.Td colSpan={5} ta="center" c="dimmed">
+                No hay movimientos para estos filtros.
+              </Table.Td>
+            </Table.Tr>
+          )}
+        </Table.Tbody>
+      </Table>
+    </Stack>
   )
 }

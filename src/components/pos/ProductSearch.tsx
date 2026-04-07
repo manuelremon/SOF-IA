@@ -14,6 +14,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
 import { IconSearch, IconCamera, IconBarcode, IconPackage, IconAlertTriangle } from '@tabler/icons-react'
+import { useSettingsStore } from '../../stores/settingsStore'
 import type { Product } from '../../types'
 
 const fmt = (n: number) =>
@@ -29,6 +30,10 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [filtered, setFiltered] = useState<Product[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const { settings } = useSettingsStore()
+  const scannerMode = settings?.scanner_mode || 'both'
+  const allowCamera = scannerMode === 'both' || scannerMode === 'camera'
 
   // Cargar todos los productos al montar
   useEffect(() => {
@@ -53,6 +58,8 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
       allProducts.filter(
         (p) =>
           p.name.toLowerCase().includes(lower) ||
+          (p.brand && p.brand.toLowerCase().includes(lower)) ||
+          (p.presentation && p.presentation.toLowerCase().includes(lower)) ||
           (p.barcode && p.barcode.toLowerCase().includes(lower)) ||
           (p.sku && p.sku.toLowerCase().includes(lower))
       )
@@ -107,6 +114,8 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
           products.filter(
             (p) =>
               p.name.toLowerCase().includes(lower) ||
+              (p.brand && p.brand.toLowerCase().includes(lower)) ||
+              (p.presentation && p.presentation.toLowerCase().includes(lower)) ||
               (p.barcode && p.barcode.toLowerCase().includes(lower)) ||
               (p.sku && p.sku.toLowerCase().includes(lower))
           )
@@ -128,18 +137,20 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
           data-barcode-target="true"
           style={{ flex: 1 }}
         />
-        <Tooltip label="Escanear con cámara" position="bottom">
-          <ActionIcon
-            variant="light"
-            color="blue"
-            size="lg"
-            h={42}
-            w={42}
-            onClick={onCameraOpen}
-          >
-            <IconCamera size={20} />
-          </ActionIcon>
-        </Tooltip>
+        {allowCamera && (
+          <Tooltip label="Escanear con cámara" position="bottom">
+            <ActionIcon
+              variant="light"
+              color="blue"
+              size="lg"
+              h={42}
+              w={42}
+              onClick={onCameraOpen}
+            >
+              <IconCamera size={20} />
+            </ActionIcon>
+          </Tooltip>
+        )}
       </Group>
 
       <Paper shadow="xs" withBorder>
@@ -188,6 +199,9 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <Text size="sm" fw={500} truncate>
                       {p.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" truncate>
+                      {[p.brand, p.presentation].filter(Boolean).join(' • ')}
                     </Text>
                     {(p.barcode || p.sku) && (
                       <Group gap={4}>

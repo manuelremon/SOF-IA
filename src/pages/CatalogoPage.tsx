@@ -4,12 +4,16 @@ import {
   Paper, Menu, Select, Text, NativeSelect
 } from '@mantine/core'
 import {
-  IconPlus, IconSearch, IconEdit, IconDots, IconCurrencyDollar
+  IconPlus, IconSearch, IconEdit, IconDots, IconCurrencyDollar, IconBarcode
 } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
 import ProductFormModal from '../components/inventory/ProductFormModal'
 import CategoryFormModal from '../components/inventory/CategoryFormModal'
 import BulkPriceModal from '../components/catalog/BulkPriceModal'
+import CameraScanner from '../components/pos/CameraScanner'
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner'
+import { notifications } from '@mantine/notifications'
+import { useSettingsStore } from '../stores/settingsStore'
 import type { Product, Category } from '../types'
 
 const fmt = (n: number) =>
@@ -37,6 +41,12 @@ export default function CatalogoPage(): JSX.Element {
   const [productFormOpened, productFormHandlers] = useDisclosure(false)
   const [categoryFormOpened, categoryFormHandlers] = useDisclosure(false)
   const [bulkOpened, bulkHandlers] = useDisclosure(false)
+  const [cameraOpened, setCameraOpened] = useState(false)
+
+  const { settings } = useSettingsStore()
+  const scannerMode = settings?.scanner_mode || 'both'
+  const allowCamera = scannerMode === 'both' || scannerMode === 'camera'
+  const allowUsb = scannerMode === 'both' || scannerMode === 'usb'
 
   const load = (): void => {
     window.api.products
@@ -75,6 +85,30 @@ export default function CatalogoPage(): JSX.Element {
 
   useEffect(() => { load() }, [search, catFilter])
 
+  const handleBarcodeDetection = async (code: string) => {
+    // Buscar si el producto ya existe
+    const res = await window.api.products.search(code)
+    let foundProd: Product | undefined | null = null
+
+    if (res.ok && res.data) {
+      const prods = res.data as Product[]
+      foundProd = prods.find((p: Product) => p.barcode === code || p.sku === code)
+      if (!foundProd && prods.length === 1) foundProd = prods[0]
+    }
+
+    if (foundProd) {
+      notifications.show({ title: 'Producto encontrado', message: `Editando: ${foundProd.name}`, color: 'blue' })
+      setSelectedProduct(foundProd)
+      productFormHandlers.open()
+    } else {
+      notifications.show({ title: 'Nuevo Producto', message: `Código de barras: ${code}`, color: 'green' })
+      setSelectedProduct({ barcode: code } as any)
+      productFormHandlers.open()
+    }
+  }
+
+  useBarcodeScanner(handleBarcodeDetection, allowUsb)
+
   const getCostForProduct = (p: Product): number => {
     const suppliers = supplierMap[p.id]
     if (!suppliers || suppliers.length === 0) return p.costPrice
@@ -108,6 +142,11 @@ export default function CatalogoPage(): JSX.Element {
           onChange={(e) => setSearch(e.currentTarget.value)}
           style={{ flex: 1 }}
         />
+        {allowCamera && (
+          <Button variant="default" onClick={() => setCameraOpened(true)} leftSection={<IconBarcode size={16} />}>
+            Escanear
+          </Button>
+        )}
         <Select
           placeholder="Categoría"
           clearable
@@ -118,12 +157,23 @@ export default function CatalogoPage(): JSX.Element {
         />
       </Group>
 
+      <CameraScanner
+        opened={cameraOpened}
+        onScan={(code) => {
+          setCameraOpened(false)
+          handleBarcodeDetection(code)
+        }}
+        onClose={() => setCameraOpened(false)}
+      />
+
       <Paper withBorder>
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Código</Table.Th>
-              <Table.Th>Nombre</Table.Th>
+              <Table.Th>Artículo</Table.Th>
+              <Table.Th>Marca</Table.Th>
+              <Table.Th>Presentación</Table.Th>
               <Table.Th>Categoría</Table.Th>
               <Table.Th ta="right">Costo</Table.Th>
               <Table.Th ta="right">Precio venta</Table.Th>
@@ -145,6 +195,12 @@ export default function CatalogoPage(): JSX.Element {
                   </Table.Td>
                   <Table.Td>
                     <Text fw={600} size="sm">{p.name}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{p.brand || '—'}</Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm">{p.presentation || '—'}</Text>
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm" c="dimmed">{p.categoryName || '—'}</Text>

@@ -42,6 +42,8 @@ export const products = sqliteTable('products', {
   categoryId: integer('category_id').references(() => categories.id),
   name: text('name').notNull(),
   description: text('description'),
+  brand: text('brand'),
+  presentation: text('presentation'),
   barcode: text('barcode'),
   sku: text('sku'),
   costPrice: real('cost_price').notNull().default(0),
@@ -258,6 +260,17 @@ export const cashRegisters = sqliteTable('cash_registers', {
   salesCount: integer('sales_count').notNull().default(0),
   notes: text('notes'),
   status: text('status').notNull().default('abierta') // 'abierta' | 'cerrada'
+})
+
+export const cashMovements = sqliteTable('cash_movements', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  registerId: integer('register_id').references(() => cashRegisters.id),
+  type: text('type').notNull(), // 'ingreso' | 'egreso'
+  amount: real('amount').notNull(),
+  description: text('description'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
 })
 
 export const appSettings = sqliteTable('app_settings', {

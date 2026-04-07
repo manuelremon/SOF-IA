@@ -151,3 +151,85 @@ export function listRegisters(limit = 20) {
     .limit(limit)
     .all()
 }
+
+export function addCash(data: { id: number; amount: number; notes?: string }) {
+  const db = getDb()
+  const sqlite = getSqlite()
+  const reg = db.select().from(schema.cashRegisters).where(eq(schema.cashRegisters.id, data.id)).get()
+  if (!reg) throw new Error('Caja no encontrada')
+  if (reg.status === 'cerrada') throw new Error('La caja está cerrada')
+
+  sqlite.prepare('UPDATE cash_registers SET opening_amount = opening_amount + ? WHERE id = ?').run(data.amount, data.id)
+  
+  db.insert(schema.cashMovements).values({
+    registerId: data.id,
+    type: data.amount > 0 ? 'ingreso' : 'egreso',
+    amount: data.amount,
+    description: data.notes || (data.amount > 0 ? 'Ingreso manual' : 'Retiro manual')
+  }).run()
+
+  if (data.notes) {
+    sqlite.prepare('INSERT INTO audit_logs (entity_type, entity_id, action, notes) VALUES (?, ?, ?, ?)').run(
+      'cash_register', data.id, 'manual_movement', data.notes
+    )
+  }
+
+  return true
+}
+
+export function getMovements(filters?: { from?: string; to?: string; type?: string }) {
+  const sqlite = getSqlite()
+  
+  let salesQuery = `
+    SELECT 
+      id as refId,
+      'Venta' as docType,
+      receipt_number as receiptNumber,
+      total as amount,
+      payment_method as paymentMethod,
+      'ingreso' as type,
+      created_at as createdAt,
+      status as status
+    FROM sales
+    WHERE 1=1
+  `
+  
+  let manualQuery = `
+    SELECT 
+      id as refId,
+      'Movimiento Manual' as docType,
+      'N/A' as receiptNumber,
+      amount as amount,
+      'efectivo' as paymentMethod,
+      type as type,
+      created_at as createdAt,
+      'completada' as status
+    FROM cash_movements
+    WHERE 1=1
+  `
+
+  const params: any[] = []
+  if (filters?.from) {
+    const fromStr = ` AND DATE(created_at) >= '${filters.from}'`
+    salesQuery += fromStr
+    manualQuery += fromStr
+  }
+  if (filters?.to) {
+    const toStr = ` AND DATE(created_at) <= '${filters.to}'`
+    salesQuery += toStr
+    manualQuery += toStr
+  }
+
+  let fullQuery = `
+    SELECT * FROM (${salesQuery} UNION ALL ${manualQuery}) as unified 
+    WHERE 1=1
+  `
+  
+  if (filters?.type && filters.type !== 'todos') {
+    fullQuery += ` AND type = '${filters.type}'`
+  }
+
+  fullQuery += ` ORDER BY datetime(createdAt) DESC LIMIT 100`
+
+  return sqlite.prepare(fullQuery).all()
+}

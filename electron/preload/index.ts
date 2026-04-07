@@ -79,7 +79,9 @@ const api = {
     current: () => ipcRenderer.invoke('cashRegister:current'),
     close: (data: any) => ipcRenderer.invoke('cashRegister:close', data),
     list: (limit?: number) => ipcRenderer.invoke('cashRegister:list', limit),
-    liveSnapshot: () => ipcRenderer.invoke('cashRegister:liveSnapshot')
+    liveSnapshot: () => ipcRenderer.invoke('cashRegister:liveSnapshot'),
+    addCash: (data: { id: number; amount: number; notes?: string }) => ipcRenderer.invoke('cashRegister:addCash', data),
+    movements: (filters?: any) => ipcRenderer.invoke('cashRegister:movements', filters)
   },
   reports: {
     byPeriod: (from: string, to: string, groupBy?: string) =>
@@ -142,6 +144,10 @@ const api = {
       ipcRenderer.invoke('customerAccount:updateLimit', customerId, creditLimit),
     debtors: () => ipcRenderer.invoke('customerAccount:debtors'),
     totalDebt: () => ipcRenderer.invoke('customerAccount:totalDebt')
+  },
+  ai: {
+    ask: (prompt: string, history?: {role: 'user'|'model', content: string}[]) => ipcRenderer.invoke('ai:ask', prompt, history),
+    resetClient: () => ipcRenderer.invoke('ai:resetClient')
   }
 }
 
