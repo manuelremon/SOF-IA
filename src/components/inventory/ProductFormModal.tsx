@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import {
   Modal, TextInput, NumberInput, Select, Button, Stack, Group, Text,
-  Table, ActionIcon, Divider, Badge
+  Table, ActionIcon, Divider, Loader
 } from '@mantine/core'
-import { IconPlus, IconTrash, IconBarcode } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconBarcode, IconSparkles } from '@tabler/icons-react'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useSettingsStore } from '../../stores/settingsStore'
@@ -45,6 +45,7 @@ export default function ProductFormModal({ opened, onClose, product, categories,
   const [addSupplierId, setAddSupplierId] = useState<string | null>(null)
   const [addSupPrice, setAddSupPrice] = useState<number>(0)
   const [cameraOpened, setCameraOpened] = useState(false)
+  const [lookupLoading, setLookupLoading] = useState(false)
 
   const { settings } = useSettingsStore()
   const scannerMode = settings?.scanner_mode || 'both'
@@ -83,6 +84,60 @@ export default function ProductFormModal({ opened, onClose, product, categories,
     window.api.supplierProducts.listByProduct(product.id).then((r: any) => {
       if (r.ok) setProductSuppliers(r.data)
     })
+  }
+
+  const handleBarcodeLookup = async (code: string): Promise<void> => {
+    if (!code || code.length < 8) return
+    
+    setLookupLoading(true)
+    try {
+      const res = await window.api.products.lookup(code)
+      if (res.ok && res.data && res.data.found) {
+        const d = res.data
+        form.setValues({
+          ...form.values,
+          name: d.name || form.values.name,
+          brand: d.brand || form.values.brand,
+          presentation: d.presentation || form.values.presentation,
+          description: d.description || form.values.description,
+          categoryId: d.categoryId ? String(d.categoryId) : form.values.categoryId,
+          salePrice: d.suggestedPrice || form.values.salePrice
+        })
+        notifications.show({
+          title: 'Producto identificado',
+          message: `Se autocompletaron los datos para: ${d.name}${d.suggestedPrice ? ' (Precio sugerido: $ ' + d.suggestedPrice + ')' : ''}`,
+          color: 'blue',
+          icon: <IconSparkles size={16} />
+        })
+      }
+    } catch (err) {
+      console.error('Lookup error', err)
+    } finally {
+      setLookupLoading(false)
+    }
+  }
+
+  const handleVisualIdentification = (d: any): void => {
+    if (!d || !d.found) return
+
+    form.setValues({
+      ...form.values,
+      barcode: d.barcode || form.values.barcode,
+      name: d.name || form.values.name,
+      brand: d.brand || form.values.brand,
+      presentation: d.presentation || form.values.presentation,
+      description: d.description || form.values.description,
+      categoryId: d.categoryId ? String(d.categoryId) : form.values.categoryId,
+      salePrice: d.suggestedPrice || form.values.salePrice
+    })
+
+    notifications.show({
+      title: 'Identificación Visual Exitosa',
+      message: `SOF-IA reconoció: ${d.name}${d.suggestedPrice ? ' - Precio Sugerido: $ ' + d.suggestedPrice : ''}`,
+      color: 'blue',
+      icon: <IconSparkles size={16} />
+    })
+    setCameraOpened(false)
   }
 
   const handleSubmit = async (values: typeof form.values): Promise<void> => {
@@ -133,33 +188,51 @@ export default function ProductFormModal({ opened, onClose, product, categories,
     <Modal opened={opened} onClose={onClose} title={product ? 'Editar producto' : 'Nuevo producto'} size={product ? 'lg' : 'md'}>
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
-          <TextInput label="Artículo" placeholder="Ej: Acondicionador" required {...form.getInputProps('name')} />
-          <Group grow>
-            <TextInput label="Marca" placeholder="Ej: Plusbelle" {...form.getInputProps('brand')} />
-            <TextInput label="Presentación" placeholder="Ej: 1L, 900ml" {...form.getInputProps('presentation')} />
-          </Group>
-          <TextInput label="Desc. Adicional" placeholder="Sabores, características..." {...form.getInputProps('description')} />
-          <Select
-            label="Categoría"
-            placeholder="Sin categoría"
-            clearable
-            data={categories.map((c) => ({ value: String(c.id), label: c.name }))}
-            {...form.getInputProps('categoryId')}
-          />
-          <Group grow>
+          <Group grow align="flex-end">
             <TextInput
               label="Código de barras"
+              placeholder="Escanea o escribe..."
               rightSection={
-                allowCamera ? (
+                lookupLoading ? (
+                  <Loader size="xs" />
+                ) : allowCamera ? (
                   <ActionIcon onClick={() => setCameraOpened(true)} variant="subtle" color="blue">
                     <IconBarcode size={16} />
                   </ActionIcon>
                 ) : undefined
               }
               {...form.getInputProps('barcode')}
+              onBlur={(e) => {
+                if (!product) handleBarcodeLookup(e.currentTarget.value)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !product) {
+                  e.preventDefault()
+                  handleBarcodeLookup(form.values.barcode)
+                }
+              }}
             />
             <TextInput label="SKU" {...form.getInputProps('sku')} />
           </Group>
+
+          <TextInput label="Artículo" placeholder="Ej: Acondicionador" required {...form.getInputProps('name')} />
+          
+          <Group grow>
+            <TextInput label="Marca" placeholder="Ej: Plusbelle" {...form.getInputProps('brand')} />
+            <TextInput label="Presentación" placeholder="Ej: 1L, 900ml" {...form.getInputProps('presentation')} />
+          </Group>
+          
+          <TextInput label="Desc. Adicional" placeholder="Sabores, características..." {...form.getInputProps('description')} />
+          
+          <Select
+            label="Categoría"
+            placeholder="Sin categoría"
+            clearable
+            searchable
+            data={categories.map((c) => ({ value: String(c.id), label: c.name }))}
+            {...form.getInputProps('categoryId')}
+          />
+          
           <Group grow>
             <NumberInput label="Precio costo" min={0} decimalScale={2} prefix="$ " {...form.getInputProps('costPrice')} />
             <NumberInput label="Precio venta" min={0} decimalScale={2} prefix="$ " {...form.getInputProps('salePrice')} />
@@ -239,7 +312,7 @@ export default function ProductFormModal({ opened, onClose, product, categories,
 
           <Group justify="flex-end">
             <Button variant="default" onClick={onClose}>Cancelar</Button>
-            <Button type="submit" color="sap">{product ? 'Guardar cambios' : 'Crear producto'}</Button>
+            <Button type="submit" color="sap" loading={lookupLoading}>{product ? 'Guardar cambios' : 'Crear producto'}</Button>
           </Group>
         </Stack>
       </form>
@@ -249,7 +322,9 @@ export default function ProductFormModal({ opened, onClose, product, categories,
         onScan={(code) => {
           setCameraOpened(false)
           form.setFieldValue('barcode', code)
+          if (!product) handleBarcodeLookup(code)
         }}
+        onIdentify={!product ? handleVisualIdentification : undefined}
         onClose={() => setCameraOpened(false)}
       />
     </Modal>

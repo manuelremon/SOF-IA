@@ -82,6 +82,13 @@ export interface Sale {
   customerName?: string | null
   userName?: string | null
   items?: SaleItem[]
+  // AFIP Fields
+  afipInvoiceType?: number
+  afipInvoiceNumber?: string | null
+  afipCae?: string | null
+  afipCaeExpiration?: string | null
+  afipDocType?: number
+  afipDocNumber?: string | null
 }
 
 export interface SaleItem {
@@ -103,6 +110,7 @@ export interface CartItem {
   unitPrice: number
   costPrice: number
   quantity: number
+  unit: string
   stock: number
   discountType?: DiscountType
   discountValue?: number
@@ -208,11 +216,27 @@ export interface GoodsReceiptItem {
 export interface AppSettings {
   business_name: string
   business_address: string
+  business_city: string
+  business_province: string
+  business_postal_code: string
   business_phone: string
+  business_phone_alt: string
+  business_email: string
+  mp_access_token: string
+  mp_pos_id: string
+  whatsapp_access_token: string
+  whatsapp_phone_id: string
   business_tax_id: string
   tax_rate: string
   currency: string
   receipt_footer: string
+  // AFIP Settings
+  afip_cuit?: string
+  afip_pto_vta?: string
+  afip_env?: string
+  afip_cert_path?: string
+  afip_key_path?: string
+  auto_backup_interval_hours?: string
   sounds_enabled?: string
   theme?: string
   [key: string]: string | undefined

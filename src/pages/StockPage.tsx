@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Title, Stack, Group, TextInput, Table, Badge, ActionIcon, Paper, Select,
-  Text, SimpleGrid, Card, Tabs, NumberInput, Button, Textarea, Modal
+  Text, SimpleGrid, Card, Tabs, NumberInput, Button, Textarea, Modal, Tooltip, Box, rem
 } from '@mantine/core'
 import {
   IconSearch, IconAdjustmentsAlt, IconAlertTriangle, IconPackage,
@@ -117,77 +117,101 @@ export default function StockPage(): JSX.Element {
   }
 
   return (
-    <Stack gap="md">
-      <Title order={3}>Stock</Title>
+    <Stack gap="xl">
+      <Box style={{ 
+        position: 'sticky', 
+        top: -24, 
+        zIndex: 100, 
+        backgroundColor: 'var(--mantine-color-body)', 
+        margin: '-24px -24px 0 -24px', 
+        padding: '24px 24px 16px 24px',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+      }}>
+        <Stack gap="lg">
+          <div>
+            <Title order={2} fw={800}>Control de Inventario</Title>
+            <Text size="sm" c="dimmed">Seguimiento de existencias, ajustes y auditoría de stock</Text>
+          </div>
+
+          <Group gap="md">
+            <TextInput
+              placeholder="Buscar por nombre, código o SKU..."
+              leftSection={<IconSearch size={16} />}
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+              style={{ flex: 1 }}
+            />
+            <Select
+              placeholder="Categoría"
+              clearable
+              data={categories.map((c) => ({ value: String(c.id), label: c.name }))}
+              value={catFilter}
+              onChange={setCatFilter}
+              w={200}
+            />
+            <Select
+              placeholder="Estado de Stock"
+              clearable
+              data={[
+                { value: 'ok', label: 'Stock OK' },
+                { value: 'bajo', label: 'Bajo stock' },
+                { value: 'sin', label: 'Sin stock' }
+              ]}
+              value={stockFilter}
+              onChange={setStockFilter}
+              w={180}
+            />
+          </Group>
+        </Stack>
+      </Box>
 
       {/* KPIs */}
-      <SimpleGrid cols={4}>
-        <Card withBorder p="sm">
-          <Text size="xs" c="dimmed">Productos</Text>
-          <Text fw={700} size="lg">{totalProducts}</Text>
-        </Card>
-        <Card withBorder p="sm">
-          <Text size="xs" c="dimmed">Unidades totales</Text>
-          <Text fw={700} size="lg">{Math.round(totalUnits)}</Text>
-        </Card>
-        <Card withBorder p="sm">
-          <Text size="xs" c="dimmed">Valor del inventario</Text>
-          <Text fw={700} size="lg" c="blue">{fmt(totalValue)}</Text>
-        </Card>
-        <Card withBorder p="sm" style={lowStock.length > 0 ? { borderColor: '#fa5252' } : undefined}>
-          <Text size="xs" c="dimmed">Stock bajo / agotado</Text>
-          <Text fw={700} size="lg" c={lowStock.length > 0 ? 'red' : 'green'}>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} gap="lg">
+        <Paper p="md" radius="md">
+          <Group justify="space-between" mb={4}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Productos</Text>
+            <IconPackage size={18} color="#2196F3" />
+          </Group>
+          <Text fw={800} size="xl">{totalProducts}</Text>
+        </Paper>
+        <Paper p="md" radius="md">
+          <Group justify="space-between" mb={4}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Unidades Totales</Text>
+            <IconPackage size={18} color="#9C27B0" />
+          </Group>
+          <Text fw={800} size="xl">{Math.round(totalUnits)}</Text>
+        </Paper>
+        <Paper p="md" radius="md" style={{ borderLeft: '4px solid #2196F3' }}>
+          <Group justify="space-between" mb={4}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Valor Inventario</Text>
+            <IconPackage size={18} color="#2196F3" />
+          </Group>
+          <Text fw={800} size="xl" c="blue.7">{fmt(totalValue)}</Text>
+        </Paper>
+        <Paper p="md" radius="md" style={{ borderLeft: '4px solid #F44336' }}>
+          <Group justify="space-between" mb={4}>
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Alerta Stock</Text>
+            <IconAlertTriangle size={18} color="#F44336" />
+          </Group>
+          <Text fw={800} size="xl" c={lowStock.length > 0 ? 'red.7' : 'green.7'}>
             {lowStock.length}
           </Text>
-        </Card>
+        </Paper>
       </SimpleGrid>
 
-      {/* Filters */}
-      <Group>
-        <TextInput
-          placeholder="Buscar producto..."
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          style={{ flex: 1 }}
-        />
-        <Select
-          placeholder="Categoría"
-          clearable
-          data={categories.map((c) => ({ value: String(c.id), label: c.name }))}
-          value={catFilter}
-          onChange={setCatFilter}
-          w={180}
-        />
-        <Select
-          placeholder="Estado stock"
-          clearable
-          data={[
-            { value: 'ok', label: 'Stock OK' },
-            { value: 'bajo', label: 'Stock bajo' },
-            { value: 'sin', label: 'Sin stock' }
-          ]}
-          value={stockFilter}
-          onChange={setStockFilter}
-          w={160}
-        />
-      </Group>
-
       {/* Table */}
-      <Paper withBorder>
-        <Table striped highlightOnHover>
+      <Paper p={0} withBorder={false} bg="transparent">
+        <Table striped highlightOnHover verticalSpacing="sm" stickyHeader stickyHeaderOffset={160}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Código</Table.Th>
               <Table.Th>Artículo</Table.Th>
-              <Table.Th>Marca</Table.Th>
-              <Table.Th>Presentación</Table.Th>
+              <Table.Th>Atributos</Table.Th>
               <Table.Th>Categoría</Table.Th>
-              <Table.Th ta="right">Stock actual</Table.Th>
-              <Table.Th ta="right">Mínimo</Table.Th>
-              <Table.Th ta="right">Valor (costo)</Table.Th>
+              <Table.Th ta="right">Stock Actual</Table.Th>
+              <Table.Th ta="right">Valorización</Table.Th>
               <Table.Th ta="center">Estado</Table.Th>
-              <Table.Th w={90} ta="center">Acciones</Table.Th>
+              <Table.Th ta="right">Acciones</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -196,45 +220,46 @@ export default function StockPage(): JSX.Element {
               return (
                 <Table.Tr key={p.id}>
                   <Table.Td>
-                    <Text size="sm" c="dimmed">{p.barcode || p.sku || '—'}</Text>
+                    <Stack gap={0}>
+                      <Text fw={700} size="sm">{p.name}</Text>
+                      <Text size="xs" c="dimmed">{p.barcode || p.sku || 'Sin código'}</Text>
+                    </Stack>
                   </Table.Td>
                   <Table.Td>
-                    <Text fw={600} size="sm">{p.name}</Text>
+                    <Group gap={4}>
+                      {p.brand && <Badge size="xs" variant="outline" color="gray">{p.brand}</Badge>}
+                      {p.presentation && <Badge size="xs" variant="outline" color="gray">{p.presentation}</Badge>}
+                    </Group>
                   </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">{p.brand || '—'}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">{p.presentation || '—'}</Text>
-                  </Table.Td>
-                  <Table.Td><Text size="sm" c="dimmed">{p.categoryName || '—'}</Text></Table.Td>
+                  <Table.Td><Badge variant="light" color="blue" size="sm">{p.categoryName || 'General'}</Badge></Table.Td>
                   <Table.Td ta="right">
-                    <Text fw={700} size="sm">{p.stock} {p.unit}</Text>
+                    <Text fw={800} size="sm">{p.stock} <Text span size="xs" fw={500} c="dimmed">{p.unit}</Text></Text>
                   </Table.Td>
                   <Table.Td ta="right">
-                    <Text size="sm" c="dimmed">{p.minStock}</Text>
-                  </Table.Td>
-                  <Table.Td ta="right">
-                    <Text size="sm">{fmt(p.stock * p.costPrice)}</Text>
+                    <Text size="sm" fw={600}>{fmt(p.stock * p.costPrice)}</Text>
                   </Table.Td>
                   <Table.Td ta="center">
                     <Badge
                       size="sm"
-                      variant="light"
-                      color={status === 'ok' ? 'green' : status === 'bajo' ? 'yellow' : 'red'}
-                      leftSection={status !== 'ok' ? <IconAlertTriangle size={10} /> : undefined}
+                      variant="filled"
+                      color={status === 'ok' ? 'green' : status === 'bajo' ? 'orange' : 'red'}
+                      style={{ width: 80 }}
                     >
-                      {status === 'ok' ? 'OK' : status === 'bajo' ? 'Bajo' : 'Agotado'}
+                      {status === 'ok' ? 'OK' : status === 'bajo' ? 'BAJO' : 'AGOTADO'}
                     </Badge>
                   </Table.Td>
-                  <Table.Td>
-                    <Group gap={4} justify="center">
-                      <ActionIcon variant="subtle" color="blue" size="sm" onClick={() => openAdjust(p)} title="Ajustar stock">
-                        <IconAdjustmentsAlt size={16} />
-                      </ActionIcon>
-                      <ActionIcon variant="subtle" color="teal" size="sm" onClick={() => openCount(p)} title="Conteo físico">
-                        <IconClipboardCheck size={16} />
-                      </ActionIcon>
+                  <Table.Td ta="right">
+                    <Group gap={4} justify="flex-end">
+                      <Tooltip label="Ajuste de Stock">
+                        <ActionIcon variant="light" color="blue" size="sm" onClick={() => openAdjust(p)}>
+                          <IconAdjustmentsAlt size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="Auditoría/Conteo">
+                        <ActionIcon variant="light" color="teal" size="sm" onClick={() => openCount(p)}>
+                          <IconClipboardCheck size={16} />
+                        </ActionIcon>
+                      </Tooltip>
                     </Group>
                   </Table.Td>
                 </Table.Tr>
@@ -242,8 +267,8 @@ export default function StockPage(): JSX.Element {
             })}
             {products.length === 0 && (
               <Table.Tr>
-                <Table.Td colSpan={8}>
-                  <Text c="dimmed" ta="center" py="xl">No se encontraron productos</Text>
+                <Table.Td colSpan={7}>
+                  <Text c="dimmed" ta="center" py="xl">No se encontraron productos en el inventario</Text>
                 </Table.Td>
               </Table.Tr>
             )}
@@ -251,59 +276,46 @@ export default function StockPage(): JSX.Element {
         </Table>
       </Paper>
 
-      {/* Adjust stock modal */}
-      <Modal opened={adjustOpened} onClose={adjustHandlers.close} title="Ajustar stock" size="sm">
+      {/* Adjust Modal */}
+      <Modal opened={adjustOpened} onClose={adjustHandlers.close} title="Ajuste de Stock" size="sm">
         {adjustProduct && (
-          <Stack>
-            <Text fw={600}>{adjustProduct.name}</Text>
-            <Text size="sm" c="dimmed">Stock actual: {adjustProduct.stock} {adjustProduct.unit}</Text>
+          <Stack gap="md">
+            <Text size="sm">Ajustando: <b>{adjustProduct.name}</b></Text>
             <NumberInput
-              label="Ajuste (positivo = entrada, negativo = salida)"
+              label="Cantidad a ajustar"
+              description="Positivo para sumar, negativo para restar"
               value={adjustQty}
               onChange={(v) => setAdjustQty(Number(v) || 0)}
-              decimalScale={2}
-              leftSection={adjustQty > 0 ? <IconArrowUp size={14} color="green" /> : adjustQty < 0 ? <IconArrowDown size={14} color="red" /> : undefined}
             />
-            {adjustQty !== 0 && (
-              <Text size="sm" c={adjustQty > 0 ? 'green' : 'red'}>
-                Nuevo stock: {adjustProduct.stock + adjustQty} {adjustProduct.unit}
-              </Text>
-            )}
             <Textarea
               label="Motivo"
-              placeholder="Ej: Merma, rotura, devolución, error de conteo..."
+              placeholder="Ej: Rotura, vencimiento..."
               value={adjustReason}
               onChange={(e) => setAdjustReason(e.currentTarget.value)}
-              rows={2}
             />
-            <Button onClick={handleAdjust} loading={adjustLoading} disabled={adjustQty === 0}>
+            <Button onClick={handleAdjust} loading={adjustLoading}>
               Aplicar ajuste
             </Button>
           </Stack>
         )}
       </Modal>
 
-      {/* Physical count modal */}
-      <Modal opened={countOpened} onClose={countHandlers.close} title="Conteo físico" size="sm">
+      {/* Count Modal */}
+      <Modal opened={countOpened} onClose={countHandlers.close} title="Auditoría de Stock (Conteo)" size="sm">
         {countProduct && (
-          <Stack>
-            <Text fw={600}>{countProduct.name}</Text>
-            <Text size="sm" c="dimmed">Stock en sistema: {countProduct.stock} {countProduct.unit}</Text>
+          <Stack gap="md">
+            <Text size="sm">Contando: <b>{countProduct.name}</b></Text>
             <NumberInput
-              label="Cantidad contada"
+              label="Cantidad encontrada"
               value={countQty}
               onChange={(v) => setCountQty(Number(v) || 0)}
               min={0}
-              decimalScale={2}
-              leftSection={<IconClipboardCheck size={14} />}
             />
             {countQty !== countProduct.stock && (
-              <Badge size="lg" color={countQty > countProduct.stock ? 'blue' : 'red'} variant="light">
-                Diferencia: {countQty > countProduct.stock ? '+' : ''}{countQty - countProduct.stock} {countProduct.unit}
-              </Badge>
+              <Badge color="orange" fullWidth variant="light">Diferencia: {countQty - countProduct.stock}</Badge>
             )}
             {countQty === countProduct.stock && (
-              <Badge size="lg" color="green" variant="light">Sin diferencia</Badge>
+              <Badge color="green" fullWidth variant="light">Sin diferencia</Badge>
             )}
             <Button onClick={handleCount} loading={countLoading} color="teal">
               Registrar conteo

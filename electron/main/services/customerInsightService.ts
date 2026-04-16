@@ -1,5 +1,30 @@
 import { getSqlite } from '../db/connection'
 
+import { getDb } from '../db/connection'
+import * as schema from '../db/schema'
+import { askAI } from './aiService'
+import { eq } from 'drizzle-orm'
+
+export async function generateRecoveryMessage(customerId: number): Promise<string> {
+  const profile = getCustomerProfile(customerId)
+  if (!profile) return 'Hola, te extrañamos en nuestro local. ¡Vuelve pronto!'
+
+  const productsStr = profile.topProducts.map(p => p.productName).join(', ')
+  const prompt = `Genera un mensaje corto, amable y persuasivo para WhatsApp para un cliente llamado "${profile.customerName}". 
+El cliente no compra hace tiempo. Sus productos favoritos son: ${productsStr}. 
+Ofrécele un descuento del 15% en su próxima compra para que regrese. 
+Usa un tono profesional pero cercano (como el dueño de un local de barrio). 
+No uses placeholders, genera el texto final. 
+Responde ÚNICAMENTE el texto del mensaje.`
+
+  try {
+    const message = await askAI(prompt)
+    return message.trim()
+  } catch (e) {
+    return `Hola ${profile.customerName}, hace tiempo que no nos visitas. ¡Te esperamos con un 15% de descuento en tu próxima compra!`
+  }
+}
+
 export interface CustomerProfile {
   customerId: number
   customerName: string

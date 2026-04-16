@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Title, Stack, Table, Paper, Text, Badge, Group, Button, Tabs,
-  Modal, Select, NumberInput, ActionIcon, Textarea, TextInput
+  Modal, Select, NumberInput, ActionIcon, Textarea, TextInput, Box
 } from '@mantine/core'
 import {
   IconTruckDelivery, IconPlus, IconTrash, IconHistory, IconPackage, IconCheck
@@ -17,178 +17,179 @@ const fmt = (n: number) =>
 
 export default function RecepcionesPage(): JSX.Element {
   const { user } = useAuthStore()
-  const [receipts, setReceipts] = useState<GoodsReceipt[]>([])
-  const [pendingOrders, setPendingOrders] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<string | null>('pendientes')
-
-  // Receive from PO
-  const [receivePO, setReceivePO] = useState<PurchaseOrder | null>(null)
-  const [receiveOpened, receiveHandlers] = useDisclosure(false)
-
-  // Receive without PO
+  const [pendingOrders, setPendingOrders] = useState<any[]>([])
+  const [receipts, setReceipts] = useState<any[]>([])
+  
+  // Free receive modal
   const [freeOpened, freeHandlers] = useDisclosure(false)
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [products, setProducts] = useState<Product[]>([])
   const [freeSupplierId, setFreeSupplierId] = useState<string | null>(null)
+  const [freeItems, setFreeItems] = useState<any[]>([])
   const [freeNotes, setFreeNotes] = useState('')
-  const [freeRemito, setFreeRemito] = useState('')
-  const [freeInvoice, setFreeInvoice] = useState('')
-  const [freePayMethod, setFreePayMethod] = useState<string | null>(null)
-  const [freeLines, setFreeLines] = useState<Array<{ productId: string | null; productName: string; qty: number; unitCost: number; expirationDate: string }>>([])
   const [freeLoading, setFreeLoading] = useState(false)
 
-  const load = (): void => {
-    window.api.goodsReceipts.list({}).then((r: any) => { if (r.ok) setReceipts(r.data) })
-    window.api.goodsReceipts.pendingOrders().then((r: any) => { if (r.ok) setPendingOrders(r.data) })
+  // Catalog data for free receive
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+
+  // From PO modal
+  const [poOpened, poHandlers] = useDisclosure(false)
+  const [selectedPO, setSelectedPO] = useState<any>(null)
+
+  const load = () => {
+    window.api.purchaseOrders.list({ status: ['enviado', 'recibido_parcial'] }).then((r: any) => {
+      if (r.ok) setPendingOrders(r.data)
+    })
+    window.api.goodsReceipts.list().then((r: any) => {
+      if (r.ok) setReceipts(r.data)
+    })
+    window.api.suppliers.list({ isActive: true }).then((r: any) => {
+      if (r.ok) setSuppliers(r.data)
+    })
+    window.api.products.list({ isActive: true }).then((r: any) => {
+      if (r.ok) setProducts(r.data)
+    })
   }
 
   useEffect(() => { load() }, [])
 
-  const openReceiveFromPO = (po: any): void => {
-    window.api.purchaseOrders.getById(po.id).then((r: any) => {
-      if (r.ok) {
-        setReceivePO(r.data)
-        receiveHandlers.open()
-      }
-    })
-  }
-
-  const openFreeReceive = (): void => {
-    window.api.suppliers.list({ isActive: true }).then((r: any) => { if (r.ok) setSuppliers(r.data) })
-    window.api.products.list({ isActive: true }).then((r: any) => { if (r.ok) setProducts(r.data) })
+  const openFreeReceive = () => {
     setFreeSupplierId(null)
+    setFreeItems([])
     setFreeNotes('')
-    setFreeRemito('')
-    setFreeInvoice('')
-    setFreePayMethod(null)
-    setFreeLines([{ productId: null, productName: '', qty: 1, unitCost: 0, expirationDate: '' }])
     freeHandlers.open()
   }
 
-  const addFreeLine = (): void => {
-    setFreeLines([...freeLines, { productId: null, productName: '', qty: 1, unitCost: 0, expirationDate: '' }])
+  const handleAddFreeItem = (prodId: string) => {
+    const p = products.find(x => String(x.id) === prodId)
+    if (!p) return
+    if (freeItems.find(x => x.productId === p.id)) return
+    setFreeItems([...freeItems, {
+      productId: p.id,
+      productName: p.name,
+      quantityReceived: 1
+    }])
   }
 
-  const removeFreeLine = (idx: number): void => {
-    if (freeLines.length <= 1) return
-    setFreeLines(freeLines.filter((_, i) => i !== idx))
+  const updateFreeQty = (index: number, val: number) => {
+    const next = [...freeItems]
+    next[index].quantityReceived = val
+    setFreeItems(next)
   }
 
-  const updateFreeLine = (idx: number, field: string, value: any): void => {
-    const updated = [...freeLines]
-    if (field === 'productId' && value) {
-      const p = products.find((pr) => pr.id === Number(value))
-      if (p) updated[idx] = { ...updated[idx], productId: value, productName: p.name, unitCost: p.costPrice }
-    } else {
-      (updated[idx] as any)[field] = value
-    }
-    setFreeLines(updated)
+  const removeFreeItem = (index: number) => {
+    setFreeItems(freeItems.filter((_, i) => i !== index))
   }
 
-  const handleFreeReceive = async (): Promise<void> => {
-    if (!freeSupplierId) {
-      notifications.show({ title: 'Error', message: 'Seleccioná un proveedor', color: 'red' })
-      return
-    }
-    const validLines = freeLines.filter((l) => l.productId && l.qty > 0)
-    if (validLines.length === 0) {
-      notifications.show({ title: 'Error', message: 'Agregá al menos un artículo', color: 'red' })
-      return
-    }
-
+  const handleFreeReceive = async () => {
+    if (!freeSupplierId || freeItems.length === 0) return
     setFreeLoading(true)
-    const res = await window.api.goodsReceipts.receiveWithoutPO({
-      supplierId: parseInt(freeSupplierId),
+    const res = await window.api.goodsReceipts.receiveDirect({
+      supplierId: Number(freeSupplierId),
       userId: user?.id,
       notes: freeNotes || undefined,
-      supplierRemito: freeRemito || undefined,
-      supplierInvoice: freeInvoice || undefined,
-      totalAmount: validLines.reduce((s, l) => s + l.qty * l.unitCost, 0) || undefined,
-      paymentMethod: freePayMethod || undefined,
-      items: validLines.map((l) => ({
-        productId: parseInt(l.productId!),
-        productName: l.productName,
-        quantityReceived: l.qty,
-        unitCost: l.unitCost,
-        expirationDate: l.expirationDate || undefined
+      items: freeItems.map(i => ({
+        productId: i.productId,
+        quantityReceived: i.quantityReceived
       }))
     })
-
-    if ((res as any).ok) {
-      notifications.show({ title: 'Recepción registrada', message: `${validLines.length} artículo(s) recibidos. OC creada automáticamente.`, color: 'green' })
+    if (res.ok) {
+      notifications.show({ title: 'Éxito', message: 'Recepción registrada correctamente', color: 'green' })
       freeHandlers.close()
       load()
     } else {
-      notifications.show({ title: 'Error', message: (res as any).error, color: 'red' })
+      notifications.show({ title: 'Error', message: res.error, color: 'red' })
     }
     setFreeLoading(false)
   }
 
-  const productOptions = products.map((p) => ({
-    value: String(p.id),
-    label: `${p.barcode || p.sku || ''} — ${p.name}`
-  }))
+  const openReceiveFromPO = (po: any) => {
+    setSelectedPO(po)
+    poHandlers.open()
+  }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={3}>Recepciones de Mercadería</Title>
-        <Button color="teal" leftSection={<IconPlus size={16} />} onClick={openFreeReceive}>
-          Recepción sin OC
-        </Button>
-      </Group>
+    <Stack gap="xl">
+      <Box style={{ 
+        position: 'sticky', 
+        top: -24, 
+        zIndex: 100, 
+        backgroundColor: 'var(--mantine-color-body)', 
+        margin: '-24px -24px 0 -24px', 
+        padding: '24px 24px 8px 24px',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+      }}>
+        <Stack gap="md">
+          <Group justify="space-between" align="flex-end">
+            <div>
+              <Title order={2} fw={800}>Recepciones</Title>
+              <Text size="sm" c="dimmed">Ingreso de mercadería y control de entregas de proveedores</Text>
+            </div>
+            <Button color="teal" leftSection={<IconPlus size={16} />} onClick={openFreeReceive}>
+              Recepción Directa
+            </Button>
+          </Group>
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-          <Tabs.Tab value="pendientes" leftSection={<IconPackage size={16} />}>
-            Pedidos pendientes
-            {pendingOrders.length > 0 && (
-              <Badge size="xs" ml={6} color="orange" variant="filled" circle>{pendingOrders.length}</Badge>
-            )}
-          </Tabs.Tab>
-          <Tabs.Tab value="historial" leftSection={<IconHistory size={16} />}>Historial</Tabs.Tab>
-        </Tabs.List>
+          <Tabs value={activeTab} onChange={setActiveTab} variant="pills" size="sm" radius="md">
+            <Tabs.List>
+              <Tabs.Tab value="pendientes" leftSection={<IconPackage size={16} />}>
+                Pedidos Pendientes
+                {pendingOrders.length > 0 && (
+                  <Badge size="xs" ml={8} color="orange" variant="filled" circle>{pendingOrders.length}</Badge>
+                )}
+              </Tabs.Tab>
+              <Tabs.Tab value="historial" leftSection={<IconHistory size={16} />}>Historial de Ingresos</Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
+        </Stack>
+      </Box>
 
+      <Tabs value={activeTab} onChange={setActiveTab} variant="unstyled">
         <Tabs.Panel value="pendientes" pt="md">
-          <Paper withBorder>
-            <Table striped highlightOnHover>
+          <Paper withBorder={false} bg="transparent" p={0}>
+            <Table striped highlightOnHover verticalSpacing="sm" stickyHeader stickyHeaderOffset={120}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Orden</Table.Th>
+                  <Table.Th>Nro. Orden</Table.Th>
                   <Table.Th>Proveedor</Table.Th>
-                  <Table.Th>Fecha pedido</Table.Th>
-                  <Table.Th>Fecha esperada</Table.Th>
-                  <Table.Th ta="center">Artículos</Table.Th>
-                  <Table.Th>Estado</Table.Th>
-                  <Table.Th ta="right">Total</Table.Th>
-                  <Table.Th w={100} />
+                  <Table.Th>Fecha Pedido</Table.Th>
+                  <Table.Th ta="center">Items</Table.Th>
+                  <Table.Th ta="center">Estado</Table.Th>
+                  <Table.Th ta="right">Importe</Table.Th>
+                  <Table.Th ta="right">Acciones</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
                 {pendingOrders.map((po) => (
                   <Table.Tr key={po.id}>
-                    <Table.Td><Badge variant="light">{po.orderNumber}</Badge></Table.Td>
-                    <Table.Td fw={500}>{po.supplierName}</Table.Td>
-                    <Table.Td>{po.orderDate}</Table.Td>
-                    <Table.Td>{po.expectedDate || '—'}</Table.Td>
-                    <Table.Td ta="center">{po.itemCount}</Table.Td>
-                    <Table.Td>
-                      <Badge color={po.status === 'enviado' ? 'blue' : 'orange'} variant="light" size="sm">
-                        {po.status === 'enviado' ? 'Enviado' : 'Parcial'}
+                    <Table.Td><Text size="sm" fw={700}>{po.orderNumber}</Text></Table.Td>
+                    <Table.Td><Text size="sm" fw={500}>{po.supplierName}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{po.orderDate}</Text></Table.Td>
+                    <Table.Td ta="center"><Badge variant="light" color="gray">{po.itemCount}</Badge></Table.Td>
+                    <Table.Td ta="center">
+                      <Badge color={po.status === 'enviado' ? 'blue' : 'orange'} variant="filled" size="sm" style={{ width: 100 }}>
+                        {po.status === 'enviado' ? 'ENVIADO' : 'PARCIAL'}
                       </Badge>
                     </Table.Td>
-                    <Table.Td ta="right">{fmt(po.subtotal)}</Table.Td>
-                    <Table.Td>
-                      <Button size="xs" color="green" leftSection={<IconTruckDelivery size={14} />} onClick={() => openReceiveFromPO(po)}>
-                        Recibir
+                    <Table.Td ta="right"><Text size="sm" fw={700}>{fmt(po.subtotal)}</Text></Table.Td>
+                    <Table.Td ta="right">
+                      <Button 
+                        size="compact-xs" 
+                        color="green" 
+                        radius="xl"
+                        leftSection={<IconTruckDelivery size={14} />} 
+                        onClick={() => openReceiveFromPO(po)}
+                      >
+                        Recibir Mercadería
                       </Button>
                     </Table.Td>
                   </Table.Tr>
                 ))}
                 {pendingOrders.length === 0 && (
                   <Table.Tr>
-                    <Table.Td colSpan={8} ta="center" c="dimmed" py="xl">
-                      No hay pedidos pendientes de recepción
+                    <Table.Td colSpan={7}>
+                      <Text c="dimmed" ta="center" py="xl">No hay pedidos pendientes de recepción</Text>
                     </Table.Td>
                   </Table.Tr>
                 )}
@@ -198,33 +199,33 @@ export default function RecepcionesPage(): JSX.Element {
         </Tabs.Panel>
 
         <Tabs.Panel value="historial" pt="md">
-          <Paper withBorder>
-            <Table striped highlightOnHover>
+          <Paper withBorder={false} bg="transparent" p={0}>
+            <Table striped highlightOnHover verticalSpacing="sm" stickyHeader stickyHeaderOffset={120}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Número</Table.Th>
-                  <Table.Th>Orden de compra</Table.Th>
+                  <Table.Th>Nro. Recepción</Table.Th>
+                  <Table.Th>Orden Origen</Table.Th>
                   <Table.Th>Proveedor</Table.Th>
-                  <Table.Th>Recibido por</Table.Th>
-                  <Table.Th>Fecha</Table.Th>
-                  <Table.Th>Notas</Table.Th>
+                  <Table.Th>Responsable</Table.Th>
+                  <Table.Th>Fecha y Hora</Table.Th>
+                  <Table.Th>Notas de Entrega</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
                 {receipts.map((r) => (
                   <Table.Tr key={r.id}>
-                    <Table.Td><Badge variant="light" color="green">{r.receiptNumber}</Badge></Table.Td>
-                    <Table.Td>{r.orderNumber || '—'}</Table.Td>
-                    <Table.Td>{r.supplierName || '—'}</Table.Td>
-                    <Table.Td>{r.userName || '—'}</Table.Td>
-                    <Table.Td>{r.createdAt}</Table.Td>
-                    <Table.Td><Text size="sm" lineClamp={1}>{r.notes || '—'}</Text></Table.Td>
+                    <Table.Td><Text size="sm" fw={700} c="green.7">{r.receiptNumber}</Text></Table.Td>
+                    <Table.Td><Badge variant="outline" color="gray">{r.orderNumber || 'DIRECTA'}</Badge></Table.Td>
+                    <Table.Td><Text size="sm" fw={500}>{r.supplierName || '—'}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{r.userName || '—'}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{r.createdAt}</Text></Table.Td>
+                    <Table.Td><Text size="xs" c="dimmed" lineClamp={1}>{r.notes || '—'}</Text></Table.Td>
                   </Table.Tr>
                 ))}
                 {receipts.length === 0 && (
                   <Table.Tr>
-                    <Table.Td colSpan={6} ta="center" c="dimmed" py="xl">
-                      No hay recepciones registradas
+                    <Table.Td colSpan={6}>
+                      <Text c="dimmed" ta="center" py="xl">No se registran ingresos en el historial</Text>
                     </Table.Td>
                   </Table.Tr>
                 )}
@@ -234,84 +235,58 @@ export default function RecepcionesPage(): JSX.Element {
         </Tabs.Panel>
       </Tabs>
 
-      {/* Receive from existing PO */}
-      <ReceiveGoodsModal
-        opened={receiveOpened}
-        onClose={receiveHandlers.close}
-        purchaseOrder={receivePO}
-        onReceived={load}
+      <ReceiveGoodsModal 
+        opened={poOpened}
+        onClose={poHandlers.close}
+        purchaseOrder={selectedPO}
+        onSaved={load}
       />
 
-      {/* Free receive (without PO) */}
-      <Modal opened={freeOpened} onClose={freeHandlers.close} title="Recepción sin orden de compra" size="xl">
-        <Stack>
-          <Text size="sm" c="dimmed">
-            Se creará automáticamente una orden de compra con estado "Recibido".
-          </Text>
-
+      {/* Free Receive Modal */}
+      <Modal opened={activeTab === 'pendientes' && freeOpened} onClose={freeHandlers.close} title="Recepción Directa (sin OC)" size="lg">
+        <Stack gap="md">
           <Select
             label="Proveedor"
-            placeholder="Seleccionar proveedor"
-            searchable
-            required
-            data={suppliers.map((s) => ({ value: String(s.id), label: s.name }))}
+            placeholder="Seleccione proveedor"
+            data={suppliers.map(s => ({ value: String(s.id), label: s.name }))}
             value={freeSupplierId}
             onChange={setFreeSupplierId}
+            searchable
           />
-
-          <Group justify="space-between">
-            <Text fw={600} size="sm">Artículos recibidos</Text>
-            <Button variant="light" size="xs" leftSection={<IconPlus size={14} />} onClick={addFreeLine}>
-              Agregar línea
-            </Button>
-          </Group>
+          <Select
+            label="Agregar producto"
+            placeholder="Buscar por nombre o código"
+            data={products.map(p => ({ 
+              value: String(p.id), 
+              label: `${p.barcode || p.sku || '—'} | ${p.name}` 
+            }))}
+            onChange={(v) => v && handleAddFreeItem(v)}
+            searchable
+            clearable
+          />
 
           <Table>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Producto</Table.Th>
-                <Table.Th w={90}>Cantidad</Table.Th>
-                <Table.Th w={110}>Costo unit.</Table.Th>
-                <Table.Th w={90}>Total</Table.Th>
-                <Table.Th w={130}>Vencimiento</Table.Th>
-                <Table.Th w={40} />
+                <Table.Th w={120}>Cantidad</Table.Th>
+                <Table.Th w={50}></Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {freeLines.map((line, idx) => (
-                <Table.Tr key={idx}>
+              {freeItems.map((item, i) => (
+                <Table.Tr key={item.productId}>
+                  <Table.Td>{item.productName}</Table.Td>
                   <Table.Td>
-                    <Select
-                      placeholder="Seleccionar producto"
-                      data={productOptions}
-                      searchable
-                      size="xs"
-                      value={line.productId}
-                      onChange={(val) => updateFreeLine(idx, 'productId', val)}
+                    <NumberInput
+                      value={item.quantityReceived}
+                      onChange={(v) => updateFreeQty(i, Number(v) || 0)}
+                      min={0.01}
                     />
                   </Table.Td>
                   <Table.Td>
-                    <NumberInput size="xs" min={0.01} step={1} decimalScale={2} value={line.qty}
-                      onChange={(val) => updateFreeLine(idx, 'qty', Number(val) || 0)} />
-                  </Table.Td>
-                  <Table.Td>
-                    <NumberInput size="xs" min={0} step={0.01} decimalScale={2} prefix="$" value={line.unitCost}
-                      onChange={(val) => updateFreeLine(idx, 'unitCost', Number(val) || 0)} />
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">${(line.qty * line.unitCost).toFixed(2)}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <TextInput
-                      size="xs"
-                      type="date"
-                      value={line.expirationDate}
-                      onChange={(e) => updateFreeLine(idx, 'expirationDate', e.currentTarget.value)}
-                    />
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon variant="subtle" color="red" size="sm" onClick={() => removeFreeLine(idx)} disabled={freeLines.length <= 1}>
-                      <IconTrash size={14} />
+                    <ActionIcon color="red" onClick={() => removeFreeItem(i)}>
+                      <IconTrash size={16} />
                     </ActionIcon>
                   </Table.Td>
                 </Table.Tr>
@@ -319,39 +294,8 @@ export default function RecepcionesPage(): JSX.Element {
             </Table.Tbody>
           </Table>
 
-          <Group grow>
-            <TextInput
-              label="Nº Remito"
-              placeholder="Ej: R-00012345"
-              value={freeRemito}
-              onChange={(e) => setFreeRemito(e.currentTarget.value)}
-            />
-            <TextInput
-              label="Nº Factura"
-              placeholder="Ej: A-0001-00012345"
-              value={freeInvoice}
-              onChange={(e) => setFreeInvoice(e.currentTarget.value)}
-            />
-          </Group>
-          <Group grow>
-            <Select
-              label="Método de pago"
-              placeholder="Seleccionar"
-              clearable
-              value={freePayMethod}
-              onChange={setFreePayMethod}
-              data={[
-                { value: 'efectivo', label: 'Efectivo' },
-                { value: 'transferencia', label: 'Transferencia' },
-                { value: 'cheque', label: 'Cheque' },
-                { value: 'cuenta_corriente', label: 'Cuenta corriente' },
-                { value: 'otro', label: 'Otro' }
-              ]}
-            />
-          </Group>
           <Textarea
             label="Notas"
-            placeholder="Ej: Pedido por teléfono, entrega directa..."
             value={freeNotes}
             onChange={(e) => setFreeNotes(e.currentTarget.value)}
           />

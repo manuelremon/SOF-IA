@@ -1,3 +1,5 @@
+import { QRCodeSVG } from 'qrcode.react'
+
 interface TicketPrintProps {
   sale: any
   businessName: string
@@ -22,6 +24,28 @@ export default function TicketPrint({
 }: TicketPrintProps): JSX.Element {
   const items = sale.items ?? []
 
+  // AFIP QR Data
+  let afipQrUrl = ''
+  if (sale.afipCae) {
+    const qrData = {
+      ver: 1,
+      fecha: sale.createdAt?.slice(0, 10),
+      cuit: parseInt(businessTaxId.replace(/\D/g, '')),
+      ptoVta: parseInt(sale.afipInvoiceNumber?.split('-')[0] || '1'),
+      tipoCbte: sale.afipInvoiceType,
+      nroCbte: parseInt(sale.afipInvoiceNumber?.split('-')[1] || '0'),
+      importe: sale.total,
+      moneda: 'PES',
+      ctz: 1,
+      tipoDocRec: sale.afipDocType || 99,
+      nroDocRec: parseInt(sale.afipDocNumber?.replace(/\D/g, '') || '0'),
+      tipoCodAut: 'E',
+      codAut: parseInt(sale.afipCae)
+    }
+    const base64 = btoa(JSON.stringify(qrData))
+    afipQrUrl = `https://www.afip.gob.ar/fe/qr/?p=${base64}`
+  }
+
   return (
     <div style={{
       fontFamily: "'Courier New', Courier, monospace",
@@ -43,10 +67,15 @@ export default function TicketPrint({
 
       {/* Receipt info */}
       <div style={{ marginBottom: '8px' }}>
-        <div><strong>Recibo:</strong> {sale.receiptNumber}</div>
+        {sale.afipInvoiceNumber ? (
+          <div><strong>Factura {sale.afipInvoiceType === 1 ? 'A' : (sale.afipInvoiceType === 6 ? 'B' : 'C')}:</strong> {sale.afipInvoiceNumber}</div>
+        ) : (
+          <div><strong>Recibo:</strong> {sale.receiptNumber}</div>
+        )}
         <div><strong>Fecha:</strong> {sale.createdAt?.slice(0, 16).replace('T', ' ')}</div>
         {sale.userName && <div><strong>Vendedor:</strong> {sale.userName}</div>}
         {sale.customerName && <div><strong>Cliente:</strong> {sale.customerName}</div>}
+        {sale.afipDocNumber && <div><strong>{sale.afipDocType === 80 ? 'CUIT' : 'DNI'}:</strong> {sale.afipDocNumber}</div>}
       </div>
 
       <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
@@ -120,6 +149,24 @@ export default function TicketPrint({
           </div>
         )}
       </div>
+
+      <div style={{ borderTop: '1px dashed #000', margin: '4px 0' }} />
+
+      {sale.afipCae && (
+        <div style={{ textAlign: 'center', marginTop: '8px', fontSize: '10px' }}>
+          <div style={{ marginBottom: '4px' }}><strong>CAE:</strong> {sale.afipCae}</div>
+          <div style={{ marginBottom: '8px' }}><strong>Vto CAE:</strong> {sale.afipCaeExpiration}</div>
+          <div style={{ 
+            marginTop: '4px', 
+            padding: '4px',
+            display: 'inline-block',
+            backgroundColor: '#fff'
+          }}>
+            <QRCodeSVG value={afipQrUrl} size={100} />
+            <div style={{ fontSize: '7px', marginTop: '4px' }}>Comprobante Autorizado por AFIP</div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div style={{ borderTop: '1px dashed #000', margin: '8px 0 4px' }} />

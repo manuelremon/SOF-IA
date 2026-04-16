@@ -17,6 +17,12 @@ import { registerAutopilotHandlers } from './autopilot'
 import { registerCustomerAccountHandlers } from './customerAccount'
 import { registerBackupHandlers } from './backup'
 import { registerSupplierProductHandlers } from './supplierProduct'
+import { registerMpHandlers } from './mpAuth'
+import { registerContextualHandlers } from './contextual'
+import { registerDraftOrderHandlers } from './draftOrders'
+import { registerDynamicPricingHandlers } from './pricing'
+import { registerHardwareHandlers } from './hardware'
+import { registerAfipHandlers } from './afip'
 
 export function registerAllHandlers(): void {
   registerProductHandlers()
@@ -37,5 +43,11 @@ export function registerAllHandlers(): void {
   registerCustomerAccountHandlers()
   registerBackupHandlers()
   registerSupplierProductHandlers()
+  registerMpHandlers()
+  registerContextualHandlers()
+  registerDraftOrderHandlers()
+  registerDynamicPricingHandlers()
+  registerHardwareHandlers()
+  registerAfipHandlers()
   setupAIHandlers()
 }

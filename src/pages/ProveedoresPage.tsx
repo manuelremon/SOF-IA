@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Menu, Text, Modal } from '@mantine/core'
+import { Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Menu, Text, Modal, Badge, Tooltip, Box } from '@mantine/core'
 import { IconPlus, IconSearch, IconEdit, IconTrash, IconDots, IconAlertTriangle, IconList } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -42,30 +42,48 @@ export default function ProveedoresPage(): JSX.Element {
   }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={3}>Proveedores</Title>
-        <Button leftSection={<IconPlus size={16} />} color="sap" onClick={() => { setSelected(null); formHandlers.open() }}>
-          Nuevo proveedor
-        </Button>
-      </Group>
+    <Stack gap="xl">
+      <Box style={{ 
+        position: 'sticky', 
+        top: -24, 
+        zIndex: 100, 
+        backgroundColor: 'var(--mantine-color-body)', 
+        margin: '-24px -24px 0 -24px', 
+        padding: '24px 24px 16px 24px',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+      }}>
+        <Stack gap="lg">
+          <Group justify="space-between" align="flex-end">
+            <div>
+              <Title order={2} fw={800}>Proveedores</Title>
+              <Text size="sm" c="dimmed">Directorio de abastecimiento y gestión de catálogos</Text>
+            </div>
+            <Button leftSection={<IconPlus size={16} />} color="sap" onClick={() => { setSelected(null); formHandlers.open() }}>
+              Nuevo Proveedor
+            </Button>
+          </Group>
 
-      <TextInput
-        placeholder="Buscar proveedores..."
-        leftSection={<IconSearch size={16} />}
-        value={search}
-        onChange={(e) => setSearch(e.currentTarget.value)}
-      />
+          <Paper p="md" shadow="sm">
+            <TextInput
+              placeholder="Buscar por nombre, CUIT, email o contacto..."
+              leftSection={<IconSearch size={16} />}
+              value={search}
+              onChange={(e) => setSearch(e.currentTarget.value)}
+              size="md"
+            />
+          </Paper>
+        </Stack>
+      </Box>
 
-      <Paper withBorder>
-        <Table>
+      <Paper withBorder={false} bg="transparent" p={0}>
+        <Table striped highlightOnHover verticalSpacing="sm" stickyHeader stickyHeaderOffset={160}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Nombre</Table.Th>
-              <Table.Th>CUIT</Table.Th>
-              <Table.Th>Teléfono</Table.Th>
-              <Table.Th>Email</Table.Th>
-              <Table.Th>Dirección</Table.Th>
+              <Table.Th>Razón Social</Table.Th>
+              <Table.Th>Identificación (CUIT)</Table.Th>
+              <Table.Th>Contacto & Comunicación</Table.Th>
+              <Table.Th>Ubicación / Dirección</Table.Th>
               <Table.Th ta="center">Catálogo</Table.Th>
               <Table.Th w={50} />
             </Table.Tr>
@@ -73,33 +91,45 @@ export default function ProveedoresPage(): JSX.Element {
           <Table.Tbody>
             {suppliers.map((s) => (
               <Table.Tr key={s.id}>
-                <Table.Td>{s.name}</Table.Td>
-                <Table.Td>{s.cuit || '—'}</Table.Td>
-                <Table.Td>{s.phone || '—'}</Table.Td>
-                <Table.Td>{s.email || '—'}</Table.Td>
-                <Table.Td>{s.address || '—'}</Table.Td>
+                <Table.Td>
+                  <Text fw={700} size="sm">{s.name}</Text>
+                </Table.Td>
+                <Table.Td>
+                  <Badge variant="outline" color="gray" radius="xs">{s.cuit || 'N/A'}</Badge>
+                </Table.Td>
+                <Table.Td>
+                  <Stack gap={0}>
+                    <Text size="sm" fw={500}>{s.phone || 'Sin teléfono'}</Text>
+                    <Text size="xs" c="dimmed">{s.email || 'Sin email'}</Text>
+                  </Stack>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" lineClamp={1}>{s.address || '—'}</Text>
+                </Table.Td>
                 <Table.Td ta="center">
                   <Button
                     variant="light"
-                    size="xs"
+                    color="blue"
+                    size="compact-xs"
+                    radius="xl"
                     leftSection={<IconList size={14} />}
                     onClick={() => { setCatalogSupplier(s); catalogHandlers.open() }}
                   >
-                    Ver
+                    Ver Catálogo
                   </Button>
                 </Table.Td>
-                <Table.Td>
-                  <Menu>
+                <Table.Td ta="right">
+                  <Menu position="bottom-end" shadow="md">
                     <Menu.Target>
-                      <ActionIcon variant="subtle"><IconDots size={16} /></ActionIcon>
+                      <ActionIcon variant="subtle" color="gray"><IconDots size={18} /></ActionIcon>
                     </Menu.Target>
                     <Menu.Dropdown>
                       <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => { setSelected(s); formHandlers.open() }}>
-                        Editar
+                        Editar datos
                       </Menu.Item>
                       {isAdmin && (
                         <Menu.Item leftSection={<IconTrash size={14} />} color="red" onClick={() => { setDeleteTarget(s); setDeleteStep(1) }}>
-                          Eliminar
+                          Eliminar proveedor
                         </Menu.Item>
                       )}
                     </Menu.Dropdown>
@@ -107,6 +137,13 @@ export default function ProveedoresPage(): JSX.Element {
                 </Table.Td>
               </Table.Tr>
             ))}
+            {suppliers.length === 0 && (
+              <Table.Tr>
+                <Table.Td colSpan={6}>
+                  <Text c="dimmed" ta="center" py="xl">No se encontraron proveedores registrados</Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
           </Table.Tbody>
         </Table>
       </Paper>

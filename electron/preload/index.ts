@@ -19,7 +19,9 @@ const api = {
     lowStock: () => ipcRenderer.invoke('products:lowStock'),
     bulkPricePreview: (filters: any, adjustment: any) =>
       ipcRenderer.invoke('products:bulkPricePreview', filters, adjustment),
-    bulkPriceApply: (updates: any) => ipcRenderer.invoke('products:bulkPriceApply', updates)
+    bulkPriceApply: (updates: any) => ipcRenderer.invoke('products:bulkPriceApply', updates),
+    lookup: (barcode: string) => ipcRenderer.invoke('products:lookup', barcode),
+    identifyByImage: (base64Image: string) => ipcRenderer.invoke('products:identifyByImage', base64Image)
   },
   sales: {
     complete: (data: CompleteSaleInput) => ipcRenderer.invoke('sales:complete', data),
@@ -62,6 +64,7 @@ const api = {
   },
   dashboard: {
     kpis: () => ipcRenderer.invoke('dashboard:kpis'),
+    cashFlow: () => ipcRenderer.invoke('dashboard:cashFlow'),
     salesChart: (days?: number) => ipcRenderer.invoke('dashboard:salesChart', days),
     topProducts: (limit?: number) => ipcRenderer.invoke('dashboard:topProducts', limit),
     recentSales: (limit?: number) => ipcRenderer.invoke('dashboard:recentSales', limit)
@@ -106,8 +109,24 @@ const api = {
   pulse: {
     getAlerts: () => ipcRenderer.invoke('pulse:getAlerts')
   },
+  contextual: {
+    getSuggestions: (limit?: number) => ipcRenderer.invoke('contextual:getSuggestions', limit)
+  },
+  draftOrders: {
+    list: () => ipcRenderer.invoke('draftOrders:list'),
+    process: (id: number) => ipcRenderer.invoke('draftOrders:process', id),
+    cancel: (id: number) => ipcRenderer.invoke('draftOrders:cancel', id),
+    getServerConfig: () => ipcRenderer.invoke('draftOrders:getServerConfig')
+  },
+  pricing: {
+    getSuggestions: () => ipcRenderer.invoke('pricing:getSuggestions')
+  },
+  hardware: {
+    readScale: () => ipcRenderer.invoke('hardware:readScale')
+  },
   customerInsight: {
     profile: (customerId: number) => ipcRenderer.invoke('customerInsight:profile', customerId),
+    generateMessage: (customerId: number) => ipcRenderer.invoke('customerInsight:generateMessage', customerId),
     atRisk: () => ipcRenderer.invoke('customerInsight:atRisk'),
     segmentation: () => ipcRenderer.invoke('customerInsight:segmentation')
   },
@@ -138,6 +157,7 @@ const api = {
   },
   customerAccount: {
     get: (customerId: number) => ipcRenderer.invoke('customerAccount:get', customerId),
+    getBalance: (customerId: number) => ipcRenderer.invoke('customerAccount:getBalance', customerId),
     charge: (data: any) => ipcRenderer.invoke('customerAccount:charge', data),
     payment: (data: any) => ipcRenderer.invoke('customerAccount:payment', data),
     updateLimit: (customerId: number, creditLimit: number) =>
@@ -147,7 +167,17 @@ const api = {
   },
   ai: {
     ask: (prompt: string, history?: {role: 'user'|'model', content: string}[]) => ipcRenderer.invoke('ai:ask', prompt, history),
+    analyze: (question: string) => ipcRenderer.invoke('ai:analyze', question),
     resetClient: () => ipcRenderer.invoke('ai:resetClient')
+  },
+  mp: {
+    login: () => ipcRenderer.invoke('mp:login')
+  },
+  afip: {
+    getServerStatus: () => ipcRenderer.invoke('afip:getServerStatus'),
+    createVoucher: (data: any) => ipcRenderer.invoke('afip:createVoucher', data),
+    getIvaTypes: () => ipcRenderer.invoke('afip:getIvaTypes'),
+    getDocumentTypes: () => ipcRenderer.invoke('afip:getDocumentTypes')
   }
 }
 

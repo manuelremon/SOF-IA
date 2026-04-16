@@ -22,6 +22,11 @@ export function getOrCreateAccount(customerId: number) {
   return account
 }
 
+export function getBalance(customerId: number): number {
+  const account = getOrCreateAccount(customerId)
+  return account.balance || 0
+}
+
 export function getAccountWithMovements(customerId: number, limit = 50) {
   const db = getDb()
   const account = getOrCreateAccount(customerId)

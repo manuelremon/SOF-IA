@@ -52,21 +52,25 @@ export function closeRegister(data: { id: number; closingAmount: number; notes?:
   if (!reg) throw new Error('Caja no encontrada')
   if (reg.status === 'cerrada') throw new Error('La caja ya está cerrada')
 
-  // Recalculate sales from DB for accuracy
-  const sqlite = getSqlite()
-  const salesData = sqlite.prepare(`
-    SELECT
-      COUNT(*) as cnt,
-      COALESCE(SUM(total), 0) as totalSales,
-      COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN total ELSE 0 END), 0) as cashSales,
-      COALESCE(SUM(CASE WHEN payment_method = 'tarjeta' THEN total ELSE 0 END), 0) as cardSales,
-      COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN total ELSE 0 END), 0) as transferSales
-    FROM sales
-    WHERE status = 'completada'
-      AND datetime(created_at) >= datetime(?)
-  `).get(reg.openedAt) as any
+  // Recalculate sales from DB for accuracy using Drizzle
+  const salesData = db
+    .select({
+      cnt: sql<number>`count(*)`,
+      totalSales: sql<number>`coalesce(sum(${schema.sales.total}), 0)`,
+      cashSales: sql<number>`coalesce(sum(case when ${schema.sales.paymentMethod} = 'efectivo' then ${schema.sales.total} else 0 end), 0)`,
+      cardSales: sql<number>`coalesce(sum(case when ${schema.sales.paymentMethod} = 'tarjeta' then ${schema.sales.total} else 0 end), 0)`,
+      transferSales: sql<number>`coalesce(sum(case when ${schema.sales.paymentMethod} = 'transferencia' then ${schema.sales.total} else 0 end), 0)`
+    })
+    .from(schema.sales)
+    .where(
+      and(
+        eq(schema.sales.status, 'completada'),
+        sql`datetime(${schema.sales.createdAt}) >= datetime(${reg.openedAt})`
+      )
+    )
+    .get()
 
-  const expectedAmount = reg.openingAmount + (salesData.cashSales ?? 0)
+  const expectedAmount = reg.openingAmount + (salesData?.cashSales ?? 0)
   const difference = data.closingAmount - expectedAmount
 
   return db
@@ -76,11 +80,11 @@ export function closeRegister(data: { id: number; closingAmount: number; notes?:
       closingAmount: data.closingAmount,
       expectedAmount,
       difference,
-      cashSales: salesData.cashSales ?? 0,
-      cardSales: salesData.cardSales ?? 0,
-      transferSales: salesData.transferSales ?? 0,
-      totalSales: salesData.totalSales ?? 0,
-      salesCount: salesData.cnt ?? 0,
+      cashSales: salesData?.cashSales ?? 0,
+      cardSales: salesData?.cardSales ?? 0,
+      transferSales: salesData?.transferSales ?? 0,
+      totalSales: salesData?.totalSales ?? 0,
+      salesCount: salesData?.cnt ?? 0,
       notes: data.notes ?? null,
       status: 'cerrada'
     })
@@ -98,32 +102,36 @@ export function getLiveSnapshot() {
     .get()
   if (!reg) return null
 
-  const sqlite = getSqlite()
-  const salesData = sqlite.prepare(`
-    SELECT
-      COUNT(*) as cnt,
-      COALESCE(SUM(total), 0) as totalSales,
-      COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN total ELSE 0 END), 0) as cashSales,
-      COALESCE(SUM(CASE WHEN payment_method = 'tarjeta' THEN total ELSE 0 END), 0) as cardSales,
-      COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN total ELSE 0 END), 0) as transferSales,
-      COALESCE(SUM(CASE WHEN payment_method = 'cuenta_corriente' THEN total ELSE 0 END), 0) as creditSales
-    FROM sales
-    WHERE status = 'completada'
-      AND datetime(created_at) >= datetime(?)
-  `).get(reg.openedAt) as any
+  const salesData = db
+    .select({
+      cnt: sql<number>`count(*)`,
+      totalSales: sql<number>`coalesce(sum(${schema.sales.total}), 0)`,
+      cashSales: sql<number>`coalesce(sum(case when ${schema.sales.paymentMethod} = 'efectivo' then ${schema.sales.total} else 0 end), 0)`,
+      cardSales: sql<number>`coalesce(sum(case when ${schema.sales.paymentMethod} = 'tarjeta' then ${schema.sales.total} else 0 end), 0)`,
+      transferSales: sql<number>`coalesce(sum(case when ${schema.sales.paymentMethod} = 'transferencia' then ${schema.sales.total} else 0 end), 0)`,
+      creditSales: sql<number>`coalesce(sum(case when ${schema.sales.paymentMethod} = 'cuenta_corriente' then ${schema.sales.total} else 0 end), 0)`
+    })
+    .from(schema.sales)
+    .where(
+      and(
+        eq(schema.sales.status, 'completada'),
+        sql`datetime(${schema.sales.createdAt}) >= datetime(${reg.openedAt})`
+      )
+    )
+    .get()
 
-  const cashInRegister = reg.openingAmount + (salesData.cashSales ?? 0)
+  const cashInRegister = reg.openingAmount + (salesData?.cashSales ?? 0)
 
   return {
     id: reg.id,
     openedAt: reg.openedAt,
     openingAmount: reg.openingAmount,
-    cashSales: salesData.cashSales ?? 0,
-    cardSales: salesData.cardSales ?? 0,
-    transferSales: salesData.transferSales ?? 0,
-    creditSales: salesData.creditSales ?? 0,
-    totalSales: salesData.totalSales ?? 0,
-    salesCount: salesData.cnt ?? 0,
+    cashSales: salesData?.cashSales ?? 0,
+    cardSales: salesData?.cardSales ?? 0,
+    transferSales: salesData?.transferSales ?? 0,
+    creditSales: salesData?.creditSales ?? 0,
+    totalSales: salesData?.totalSales ?? 0,
+    salesCount: salesData?.cnt ?? 0,
     cashInRegister
   }
 }
@@ -179,6 +187,7 @@ export function addCash(data: { id: number; amount: number; notes?: string }) {
 
 export function getMovements(filters?: { from?: string; to?: string; type?: string }) {
   const sqlite = getSqlite()
+  const params: any[] = []
   
   let salesQuery = `
     SELECT 
@@ -208,16 +217,15 @@ export function getMovements(filters?: { from?: string; to?: string; type?: stri
     WHERE 1=1
   `
 
-  const params: any[] = []
   if (filters?.from) {
-    const fromStr = ` AND DATE(created_at) >= '${filters.from}'`
-    salesQuery += fromStr
-    manualQuery += fromStr
+    salesQuery += ` AND DATE(created_at) >= ?`
+    manualQuery += ` AND DATE(created_at) >= ?`
+    params.push(filters.from, filters.from)
   }
   if (filters?.to) {
-    const toStr = ` AND DATE(created_at) <= '${filters.to}'`
-    salesQuery += toStr
-    manualQuery += toStr
+    salesQuery += ` AND DATE(created_at) <= ?`
+    manualQuery += ` AND DATE(created_at) <= ?`
+    params.push(filters.to, filters.to)
   }
 
   let fullQuery = `
@@ -226,10 +234,11 @@ export function getMovements(filters?: { from?: string; to?: string; type?: stri
   `
   
   if (filters?.type && filters.type !== 'todos') {
-    fullQuery += ` AND type = '${filters.type}'`
+    fullQuery += ` AND type = ?`
+    params.push(filters.type)
   }
 
   fullQuery += ` ORDER BY datetime(createdAt) DESC LIMIT 100`
 
-  return sqlite.prepare(fullQuery).all()
+  return sqlite.prepare(fullQuery).all(...params)
 }

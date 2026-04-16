@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SimpleGrid, Paper, Group, Text, Title, Stack, Table, Box } from '@mantine/core'
+import { SimpleGrid, Paper, Group, Text, Title, Stack, Table, Box, Badge, Button } from '@mantine/core'
 import {
   IconCash,
   IconShoppingCart,
@@ -22,6 +22,7 @@ export default function DashboardPage(): JSX.Element {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([])
   const [recent, setRecent] = useState<RecentSale[]>([])
   const [totalDebt, setTotalDebt] = useState<number>(0)
+  const [cashFlow, setCashFlow] = useState<any>(null)
 
   useEffect(() => {
     window.api.dashboard.kpis().then((r: any) => r.ok && setKpis(r.data))
@@ -29,39 +30,59 @@ export default function DashboardPage(): JSX.Element {
     window.api.dashboard.topProducts(5).then((r: any) => r.ok && setTopProducts(r.data))
     window.api.dashboard.recentSales(8).then((r: any) => r.ok && setRecent(r.data))
     window.api.customerAccount.totalDebt().then((r: any) => { if (r.ok) setTotalDebt(r.data as number) })
+    window.api.dashboard.cashFlow().then((r: any) => { if (r.ok) setCashFlow(r.data) })
   }, [])
 
   const kpiCards = kpis
     ? [
-        { label: 'Ventas hoy', value: kpis.ventasHoy, sub: fmt(kpis.ingresoHoy), icon: IconShoppingCart, color: '#0A6ED1' },
-        { label: 'Ventas del mes', value: kpis.ventasMes, sub: fmt(kpis.ingresoMes), icon: IconCalendar, color: '#107E7D' },
-        { label: 'Productos', value: kpis.productos, sub: '', icon: IconPackage, color: '#6C757D' },
-        { label: 'Stock bajo', value: kpis.stockBajo, sub: '', icon: IconAlertTriangle, color: kpis.stockBajo > 0 ? '#E74C3C' : '#27AE60' },
-        { label: 'Clientes', value: kpis.clientes, sub: '', icon: IconUsers, color: '#8E44AD' },
-        { label: 'Cuentas x cobrar', value: '', sub: fmt(totalDebt), icon: IconReceipt2, color: totalDebt > 0 ? '#E67E22' : '#27AE60' }
+        { label: 'Ventas hoy', value: kpis.ventasHoy, sub: fmt(kpis.ingresoHoy), icon: IconShoppingCart, color: '#2196F3' },
+        { label: 'Ventas del mes', value: kpis.ventasMes, sub: fmt(kpis.ingresoMes), icon: IconCalendar, color: '#4CAF50' },
+        { label: 'Productos', value: kpis.productos, sub: 'En catálogo', icon: IconPackage, color: '#9C27B0' },
+        { label: 'Saldo Proyectado (30d)', value: '', sub: cashFlow ? fmt(cashFlow.projection30d) : 'Calculando...', icon: IconReceipt2, color: cashFlow?.projection30d > 0 ? '#4CAF50' : '#F44336' },
+        { label: 'Cuentas x cobrar', value: '', sub: fmt(totalDebt), icon: IconReceipt2, color: totalDebt > 0 ? '#FF9800' : '#4CAF50' }
       ]
     : []
 
   return (
-    <Stack gap="md">
-      <Title order={3}>Dashboard</Title>
+    <Stack gap="xl">
+      <Box style={{ 
+        position: 'sticky', 
+        top: -24, 
+        zIndex: 100, 
+        backgroundColor: 'var(--mantine-color-body)', 
+        margin: '-24px -24px 0 -24px', 
+        padding: '24px 24px 16px 24px',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+      }}>
+        <Stack gap="md">
+          <Group justify="space-between" align="flex-end">
+            <div>
+              <Title order={2} fw={800}>Dashboard</Title>
+              <Text size="sm" c="dimmed">Resumen operativo y financiero de tu negocio</Text>
+            </div>
+          </Group>
+          <PulseAlerts />
+        </Stack>
+      </Box>
 
-      <PulseAlerts />
-
-      <SimpleGrid cols={{ base: 2, sm: 3, md: 5 }}>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 5 }} gap="lg">
         {kpiCards.map((kpi) => (
-          <Paper key={kpi.label} p="md" withBorder>
-            <Group justify="space-between" mb={4}>
-              <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                {kpi.label}
-              </Text>
-              <kpi.icon size={20} color={kpi.color} />
+          <Paper key={kpi.label} p="lg" radius="md">
+            <Group justify="space-between" mb={12}>
+              <Box style={{ backgroundColor: `${kpi.color}15`, padding: 8, borderRadius: 8 }}>
+                <kpi.icon size={22} color={kpi.color} stroke={2} />
+              </Box>
+              <Badge variant="light" color="gray" size="xs">Hoy</Badge>
             </Group>
-            <Text size="xl" fw={700}>
-              {kpi.value}
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>
+              {kpi.label}
+            </Text>
+            <Text size="xl" fw={800} mt={4}>
+              {kpi.value || '—'}
             </Text>
             {kpi.sub && (
-              <Text size="sm" c="dimmed">
+              <Text size="sm" fw={600} c={kpi.label.includes('Saldo') ? (cashFlow?.projection30d > 0 ? 'green.7' : 'red.7') : 'dark.3'} mt={2}>
                 {kpi.sub}
               </Text>
             )}
@@ -69,32 +90,46 @@ export default function DashboardPage(): JSX.Element {
         ))}
       </SimpleGrid>
 
-      <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Paper p="md" withBorder>
-          <Text fw={600} mb="sm">
-            Ventas - Últimos 7 días
-          </Text>
-          <Box h={250}>
+      <SimpleGrid cols={{ base: 1, md: 2 }} gap="lg">
+        <Paper p="lg">
+          <Group justify="space-between" mb="md">
+            <Text fw={700} size="lg">Tendencia de Ventas</Text>
+            <Badge variant="dot" size="sm">Últimos 7 días</Badge>
+          </Group>
+          <Box h={300}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chart}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
+              <BarChart data={chart} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f3f5" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 11, fill: '#868e96', fontWeight: 500 }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 11, fill: '#868e96', fontWeight: 500 }} 
+                />
                 <Tooltip
-                  formatter={(value: number) => fmt(value)}
+                  cursor={{ fill: '#f8f9fa' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  formatter={(value: number) => [fmt(value), 'Ingresos']}
                   labelFormatter={(label) => `Fecha: ${label}`}
                 />
-                <Bar dataKey="total" fill="#0A6ED1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" fill="#2196F3" radius={[4, 4, 0, 0]} barSize={30} />
               </BarChart>
             </ResponsiveContainer>
           </Box>
         </Paper>
 
-        <Paper p="md" withBorder>
-          <Text fw={600} mb="sm">
-            Top 5 productos (30 días)
-          </Text>
-          <Table>
+        <Paper p="lg">
+          <Group justify="space-between" mb="md">
+            <Text fw={700} size="lg">Top Productos</Text>
+            <Badge variant="outline" size="sm">Más vendidos</Badge>
+          </Group>
+          <Table verticalSpacing="sm">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Producto</Table.Th>
@@ -105,9 +140,18 @@ export default function DashboardPage(): JSX.Element {
             <Table.Tbody>
               {topProducts.map((p, i) => (
                 <Table.Tr key={i}>
-                  <Table.Td>{p.name}</Table.Td>
-                  <Table.Td ta="right">{p.qty}</Table.Td>
-                  <Table.Td ta="right">{fmt(p.revenue)}</Table.Td>
+                  <Table.Td>
+                    <Group gap="sm">
+                      <Text size="xs" fw={700} c="dimmed" w={15}>{i + 1}</Text>
+                      <Text size="sm" fw={600}>{p.name}</Text>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td ta="right">
+                    <Badge color="gray" variant="light">{p.qty}</Badge>
+                  </Table.Td>
+                  <Table.Td ta="right" fw={700}>
+                    {fmt(p.revenue)}
+                  </Table.Td>
                 </Table.Tr>
               ))}
               {topProducts.length === 0 && (
@@ -124,11 +168,12 @@ export default function DashboardPage(): JSX.Element {
         </Paper>
       </SimpleGrid>
 
-      <Paper p="md" withBorder>
-        <Text fw={600} mb="sm">
-          Ventas recientes
-        </Text>
-        <Table>
+      <Paper p="lg">
+        <Group justify="space-between" mb="md">
+          <Text fw={700} size="lg">Ventas Recientes</Text>
+          <Button variant="light" size="xs">Ver todas</Button>
+        </Group>
+        <Table striped highlightOnHover verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Recibo</Table.Th>
@@ -141,11 +186,23 @@ export default function DashboardPage(): JSX.Element {
           <Table.Tbody>
             {recent.map((s) => (
               <Table.Tr key={s.id}>
-                <Table.Td>{s.receiptNumber}</Table.Td>
-                <Table.Td>{s.customerName || '—'}</Table.Td>
-                <Table.Td>{s.paymentMethod}</Table.Td>
-                <Table.Td ta="right">{fmt(s.total)}</Table.Td>
-                <Table.Td>{s.createdAt?.slice(0, 16)}</Table.Td>
+                <Table.Td>
+                  <Text size="sm" fw={700}>{s.receiptNumber}</Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" fw={500}>{s.customerName || 'Consumidor Final'}</Text>
+                </Table.Td>
+                <Table.Td>
+                  <Badge variant="dot" color={s.paymentMethod === 'efectivo' ? 'green' : 'blue'} size="sm" tt="capitalize">
+                    {s.paymentMethod}
+                  </Badge>
+                </Table.Td>
+                <Table.Td ta="right">
+                  <Text size="sm" fw={800} c="sap.7">{fmt(s.total)}</Text>
+                </Table.Td>
+                <Table.Td>
+                  <Text size="sm" c="dimmed">{s.createdAt?.slice(0, 16)}</Text>
+                </Table.Td>
               </Table.Tr>
             ))}
             {recent.length === 0 && (

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
   Modal, Stack, Select, NumberInput, Button, Group, Text, Alert,
-  SegmentedControl, Divider, ActionIcon, TextInput, Tooltip
+  SegmentedControl, Divider, ActionIcon, TextInput, Tooltip, Switch
 } from '@mantine/core'
-import { IconAlertCircle, IconDiscount, IconPlus } from '@tabler/icons-react'
+import { IconAlertCircle, IconDiscount, IconPlus, IconFileInvoice } from '@tabler/icons-react'
 import { useCartStore } from '../../stores/cartStore'
 import { useAuthStore } from '../../stores/authStore'
 import { notifications } from '@mantine/notifications'
@@ -36,6 +36,13 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
   const [newCustPhone, setNewCustPhone] = useState('')
   const [newCustLoading, setNewCustLoading] = useState(false)
 
+  // AFIP state
+  const [emitirAfip, setEmitirAfip] = useState(false)
+  const [afipPtoVta, setAfipPtoVta] = useState(1)
+  const [afipInvoiceType, setAfipInvoiceType] = useState<string>('11') // 11=Fact C default
+  const [afipDocType, setAfipDocType] = useState<string>('99') // 99=Consumidor Final
+  const [afipDocNumber, setAfipDocNumber] = useState<string>('')
+
   const subtotal = getSubtotal()
   const generalDiscountTotal = getGeneralDiscountTotal()
   const subtotalAfterDiscount = getSubtotalWithDiscounts()
@@ -51,8 +58,12 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
       setSelectedCustomerId(null)
       setDiscType(generalDiscountType ?? 'porcentaje')
       setDiscValue(generalDiscountValue)
+      setEmitirAfip(false)
       window.api.settings.get('tax_rate').then((r: any) => {
         if (r.ok && r.data) setTaxRate(parseFloat(r.data) || 0)
+      })
+      window.api.settings.get('afip_pto_vta').then((r: any) => {
+        if (r.ok && r.data) setAfipPtoVta(parseInt(r.data) || 1)
       })
       window.api.customers.list({ isActive: true }).then((r: any) => {
         if (r.ok && r.data) setCustomers(r.data)
@@ -112,6 +123,52 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
     if (paymentMethod === 'cuenta_corriente' && !selectedCustomerId) return
     if (paymentMethod === 'cuenta_corriente' && accountExceedsLimit) return
     setLoading(true)
+
+    let auditPhoto = undefined
+    const videoElement = document.querySelector('video')
+    if (videoElement && videoElement.readyState === 4) {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = videoElement.videoWidth
+        canvas.height = videoElement.videoHeight
+        canvas.getContext('2d')?.drawImage(videoElement, 0, 0)
+        auditPhoto = canvas.toDataURL('image/jpeg', 0.3)
+      } catch (e) {}
+    }
+
+    let afipData: any = null
+    if (emitirAfip) {
+      try {
+        const resAfip = await window.api.afip.createVoucher({
+          tipoComprobante: parseInt(afipInvoiceType),
+          puntoVenta: afipPtoVta,
+          docTipo: parseInt(afipDocType),
+          docNro: parseInt(afipDocNumber || '0'),
+          importeTotal: total,
+          importeGravado: subtotalAfterDiscount,
+          importeExento: 0,
+          importeIVA: taxTotal,
+          alicuotas: taxRate > 0 ? [{
+            Id: taxRate === 21 ? 5 : (taxRate === 10.5 ? 4 : 3), // Simplificación: 5=21%, 4=10.5%, 3=0%
+            BaseImp: subtotalAfterDiscount,
+            Importe: taxTotal
+          }] : []
+        })
+
+        if (resAfip.ok && resAfip.data) {
+          afipData = resAfip.data
+        } else {
+          notifications.show({ title: 'Error AFIP', message: resAfip.error || 'No se pudo autorizar el comprobante', color: 'red' })
+          setLoading(false)
+          return
+        }
+      } catch (err: any) {
+        notifications.show({ title: 'Error de conexión', message: err.message, color: 'red' })
+        setLoading(false)
+        return
+      }
+    }
+
     try {
       const res = await window.api.sales.complete({
         userId: user?.id,
@@ -121,6 +178,7 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
         taxRate,
         discountType: generalDiscountType,
         discountValue: generalDiscountValue,
+        auditImagePath: auditPhoto,
         items: items.map((i) => ({
           productId: i.productId,
           productName: i.productName,
@@ -128,7 +186,14 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
           unitPrice: i.unitPrice,
           discountType: i.discountType,
           discountValue: i.discountValue ?? 0
-        }))
+        })),
+        // Pass AFIP data if available
+        afipInvoiceType: afipData ? parseInt(afipInvoiceType) : undefined,
+        afipInvoiceNumber: afipData?.fullNumber,
+        afipCae: afipData?.cae,
+        afipCaeExpiration: afipData?.caeVto,
+        afipDocType: afipData ? parseInt(afipDocType) : undefined,
+        afipDocNumber: afipData ? afipDocNumber : undefined
       })
       if (res.ok && res.data) {
         const saleData = res.data as any
@@ -321,6 +386,49 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
           <Alert icon={<IconAlertCircle size={16} />} color="red">
             El monto recibido es menor al total
           </Alert>
+        )}
+
+        <Divider label="Facturación Oficial" />
+        <Switch
+          label="Emitir Factura Electrónica (AFIP)"
+          checked={emitirAfip}
+          onChange={(e) => setEmitirAfip(e.currentTarget.checked)}
+          thumbIcon={emitirAfip ? <IconFileInvoice size={12} color="green" /> : undefined}
+        />
+
+        {emitirAfip && (
+          <Stack gap="xs">
+            <Group grow>
+              <Select
+                label="Tipo de Comprobante"
+                value={afipInvoiceType}
+                onChange={(v) => setAfipInvoiceType(v || '11')}
+                data={[
+                  { label: 'Factura C', value: '11' },
+                  { label: 'Factura B', value: '6' },
+                  { label: 'Factura A', value: '1' }
+                ]}
+              />
+              <Select
+                label="Tipo Doc. Cliente"
+                value={afipDocType}
+                onChange={(v) => setAfipDocType(v || '99')}
+                data={[
+                  { label: 'DNI', value: '96' },
+                  { label: 'CUIT', value: '80' },
+                  { label: 'Sin Doc (Cons. Final)', value: '99' }
+                ]}
+              />
+            </Group>
+            {afipDocType !== '99' && (
+              <TextInput
+                label="Número de Documento"
+                placeholder="DNI o CUIT del cliente"
+                value={afipDocNumber}
+                onChange={(e) => setAfipDocNumber(e.currentTarget.value)}
+              />
+            )}
+          </Stack>
         )}
 
         {paymentMethod === 'cuenta_corriente' && (

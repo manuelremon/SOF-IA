@@ -122,6 +122,14 @@ export const sales = sqliteTable('sales', {
   paymentMethod: text('payment_method').notNull().default('efectivo'),
   status: text('status').notNull().default('completada'), // 'completada' | 'anulada'
   notes: text('notes'),
+  auditImagePath: text('audit_image_path'),
+  // AFIP Fields
+  afipInvoiceType: integer('afip_invoice_type'), // 1=Fact A, 6=Fact B, 11=Fact C
+  afipInvoiceNumber: text('afip_invoice_number'), // 0001-00000001
+  afipCae: text('afip_cae'),
+  afipCaeExpiration: text('afip_cae_expiration'),
+  afipDocType: integer('afip_doc_type'), // 80=CUIT, 96=DNI, etc.
+  afipDocNumber: text('afip_doc_number'),
   createdAt: text('created_at')
     .notNull()
     .default(sql`(datetime('now','localtime'))`)
@@ -146,6 +154,21 @@ export const saleItems = sqliteTable('sale_items', {
   discountValue: real('discount_value').notNull().default(0),
   discountTotal: real('discount_total').notNull().default(0),
   lineTotal: real('line_total').notNull()
+})
+
+/* ------------------------------------------------------------------ */
+/*  Draft Orders (Rompefilas)                                          */
+/* ------------------------------------------------------------------ */
+
+export const draftOrders = sqliteTable('draft_orders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  status: text('status').notNull().default('pendiente'), // 'pendiente' | 'procesada' | 'cancelada'
+  itemsJson: text('items_json').notNull(), // JSON string de los items del carrito
+  total: real('total').notNull().default(0),
+  deviceName: text('device_name'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
 })
 
 /* ------------------------------------------------------------------ */

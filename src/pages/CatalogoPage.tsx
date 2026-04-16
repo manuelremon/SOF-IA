@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Title, Stack, Group, Button, TextInput, Table, Badge, ActionIcon,
-  Paper, Menu, Select, Text, NativeSelect
+  Paper, Menu, Select, Text, NativeSelect, Box
 } from '@mantine/core'
 import {
   IconPlus, IconSearch, IconEdit, IconDots, IconCurrencyDollar, IconBarcode
@@ -118,44 +118,62 @@ export default function CatalogoPage(): JSX.Element {
   }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={3}>Catálogo de Productos</Title>
-        <Group>
-          <Button variant="light" color="blue" leftSection={<IconCurrencyDollar size={16} />} onClick={bulkHandlers.open}>
-            Actualizar precios
-          </Button>
-          <Button variant="light" leftSection={<IconPlus size={16} />} onClick={() => { setSelectedCategory(null); categoryFormHandlers.open() }}>
-            Categoría
-          </Button>
-          <Button color="sap" leftSection={<IconPlus size={16} />} onClick={() => { setSelectedProduct(null); productFormHandlers.open() }}>
-            Nuevo producto
-          </Button>
-        </Group>
-      </Group>
+    <Stack gap="xl">
+      <Box style={{ 
+        position: 'sticky', 
+        top: -24, // Compensa el padding del AppShell
+        zIndex: 100, 
+        backgroundColor: 'var(--mantine-color-body)', 
+        margin: '-24px -24px 0 -24px', 
+        padding: '24px 24px 16px 24px',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+      }}>
+        <Stack gap="lg">
+          <Group justify="space-between" align="flex-end">
+            <div>
+              <Title order={2} fw={800}>Catálogo de Productos</Title>
+              <Text size="sm" c="dimmed">Administración de artículos, categorías y precios</Text>
+            </div>
+            <Group gap="sm">
+              <Button variant="light" color="blue" leftSection={<IconCurrencyDollar size={16} />} onClick={bulkHandlers.open}>
+                Precios masivos
+              </Button>
+              <Button variant="light" color="gray" leftSection={<IconPlus size={16} />} onClick={() => { setSelectedCategory(null); categoryFormHandlers.open() }}>
+                Nueva Categoría
+              </Button>
+              <Button color="sap" leftSection={<IconPlus size={16} />} onClick={() => { setSelectedProduct(null); productFormHandlers.open() }}>
+                Nuevo Producto
+              </Button>
+            </Group>
+          </Group>
 
-      <Group>
-        <TextInput
-          placeholder="Buscar productos..."
-          leftSection={<IconSearch size={16} />}
-          value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          style={{ flex: 1 }}
-        />
-        {allowCamera && (
-          <Button variant="default" onClick={() => setCameraOpened(true)} leftSection={<IconBarcode size={16} />}>
-            Escanear
-          </Button>
-        )}
-        <Select
-          placeholder="Categoría"
-          clearable
-          data={categories.map((c) => ({ value: String(c.id), label: c.name }))}
-          value={catFilter}
-          onChange={setCatFilter}
-          w={200}
-        />
-      </Group>
+          <Paper p="md" shadow="sm">
+            <Group gap="md">
+              <TextInput
+                placeholder="Buscar por nombre, marca o código..."
+                leftSection={<IconSearch size={16} />}
+                value={search}
+                onChange={(e) => setSearch(e.currentTarget.value)}
+                style={{ flex: 1 }}
+              />
+              {allowCamera && (
+                <Button variant="outline" color="blue" onClick={() => setCameraOpened(true)} leftSection={<IconBarcode size={16} />}>
+                  Escanear Cámara
+                </Button>
+              )}
+              <Select
+                placeholder="Filtrar por Categoría"
+                clearable
+                data={categories.map((c) => ({ value: String(c.id), label: c.name }))}
+                value={catFilter}
+                onChange={setCatFilter}
+                w={250}
+              />
+            </Group>
+          </Paper>
+        </Stack>
+      </Box>
 
       <CameraScanner
         opened={cameraOpened}
@@ -166,20 +184,17 @@ export default function CatalogoPage(): JSX.Element {
         onClose={() => setCameraOpened(false)}
       />
 
-      <Paper withBorder>
-        <Table striped highlightOnHover>
+      <Paper withBorder={false} bg="transparent" p={0}>
+        <Table striped highlightOnHover verticalSpacing="sm" stickyHeader stickyHeaderOffset={160}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Código</Table.Th>
               <Table.Th>Artículo</Table.Th>
-              <Table.Th>Marca</Table.Th>
-              <Table.Th>Presentación</Table.Th>
+              <Table.Th>Atributos</Table.Th>
               <Table.Th>Categoría</Table.Th>
-              <Table.Th ta="right">Costo</Table.Th>
-              <Table.Th ta="right">Precio venta</Table.Th>
-              <Table.Th ta="right">Stock mín.</Table.Th>
-              <Table.Th>Proveedores</Table.Th>
-              <Table.Th ta="center">Activo</Table.Th>
+              <Table.Th ta="right">Costo Ref.</Table.Th>
+              <Table.Th ta="right">Precio Venta</Table.Th>
+              <Table.Th>Mejor Proveedor</Table.Th>
+              <Table.Th ta="center">Estado</Table.Th>
               <Table.Th w={50} />
             </Table.Tr>
           </Table.Thead>
@@ -191,37 +206,33 @@ export default function CatalogoPage(): JSX.Element {
               return (
                 <Table.Tr key={p.id}>
                   <Table.Td>
-                    <Text size="sm" c="dimmed">{p.barcode || p.sku || '—'}</Text>
+                    <Stack gap={0}>
+                      <Text fw={700} size="sm">{p.name}</Text>
+                      <Text size="xs" c="dimmed">{p.barcode || p.sku || 'Sin código'}</Text>
+                    </Stack>
                   </Table.Td>
                   <Table.Td>
-                    <Text fw={600} size="sm">{p.name}</Text>
+                    <Group gap={4}>
+                      {p.brand && <Badge size="xs" variant="outline" color="gray">{p.brand}</Badge>}
+                      {p.presentation && <Badge size="xs" variant="outline" color="gray">{p.presentation}</Badge>}
+                    </Group>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm">{p.brand || '—'}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">{p.presentation || '—'}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm" c="dimmed">{p.categoryName || '—'}</Text>
+                    <Badge variant="light" color="blue" size="sm">{p.categoryName || 'General'}</Badge>
                   </Table.Td>
                   <Table.Td ta="right">
                     <Text size="sm" fw={500}>{fmt(cost)}</Text>
                   </Table.Td>
                   <Table.Td ta="right">
-                    <Text fw={700} size="sm">{fmt(p.salePrice)}</Text>
-                  </Table.Td>
-                  <Table.Td ta="right">
-                    <Text size="sm" c="dimmed">{p.minStock}</Text>
+                    <Text fw={800} size="sm" c="sap.7">{fmt(p.salePrice)}</Text>
                   </Table.Td>
                   <Table.Td>
                     {suppliers.length === 0 ? (
-                      <Text size="xs" c="dimmed">—</Text>
-                    ) : suppliers.length === 1 ? (
-                      <Text size="xs">{suppliers[0].supplierName}</Text>
+                      <Text size="xs" c="dimmed">No asignado</Text>
                     ) : (
                       <NativeSelect
                         size="xs"
+                        variant="unstyled"
                         value={String(selectedSupplier[p.id] || suppliers[0].supplierId)}
                         onChange={(e) => setSelectedSupplier((prev) => ({
                           ...prev,
@@ -231,19 +242,19 @@ export default function CatalogoPage(): JSX.Element {
                           value: String(s.supplierId),
                           label: `${s.supplierName} (${fmt(s.supplierPrice)})`
                         }))}
-                        styles={{ input: { minHeight: 28, height: 28, paddingTop: 0, paddingBottom: 0, fontSize: 12 } }}
+                        styles={{ input: { paddingLeft: 0, fontWeight: 600, color: 'var(--mantine-color-blue-7)' } }}
                       />
                     )}
                   </Table.Td>
                   <Table.Td ta="center">
                     <Badge size="sm" color={p.isActive ? 'green' : 'gray'} variant="light">
-                      {p.isActive ? 'Sí' : 'No'}
+                      {p.isActive ? 'ACTIVO' : 'INACTIVO'}
                     </Badge>
                   </Table.Td>
-                  <Table.Td>
-                    <Menu>
+                  <Table.Td ta="right">
+                    <Menu position="bottom-end" shadow="md">
                       <Menu.Target>
-                        <ActionIcon variant="subtle"><IconDots size={16} /></ActionIcon>
+                        <ActionIcon variant="subtle" color="gray"><IconDots size={18} /></ActionIcon>
                       </Menu.Target>
                       <Menu.Dropdown>
                         <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => { setSelectedProduct(p); productFormHandlers.open() }}>
@@ -257,8 +268,8 @@ export default function CatalogoPage(): JSX.Element {
             })}
             {products.length === 0 && (
               <Table.Tr>
-                <Table.Td colSpan={9}>
-                  <Text c="dimmed" ta="center" py="xl">No se encontraron productos</Text>
+                <Table.Td colSpan={8}>
+                  <Text c="dimmed" ta="center" py="xl">No hay productos que coincidan con la búsqueda</Text>
                 </Table.Td>
               </Table.Tr>
             )}

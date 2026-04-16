@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Modal, Stack, Text, Button, Group, Select, Alert } from '@mantine/core'
-import { IconCamera, IconCameraOff, IconAlertCircle } from '@tabler/icons-react'
+import { Modal, Stack, Text, Button, Group, Select, Alert, Loader } from '@mantine/core'
+import { IconCamera, IconCameraOff, IconAlertCircle, IconSparkles } from '@tabler/icons-react'
 import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser'
 
 interface CameraScannerProps {
   opened: boolean
   onClose: () => void
   onScan: (code: string) => void
+  onIdentify?: (data: any) => void
 }
 
-export default function CameraScanner({ opened, onClose, onScan }: CameraScannerProps): JSX.Element {
+export default function CameraScanner({ opened, onClose, onScan, onIdentify }: CameraScannerProps): JSX.Element {
   const videoRef = useRef<HTMLVideoElement>(null)
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null)
   const scanControlsRef = useRef<IScannerControls | null>(null)
@@ -19,6 +20,7 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(false)
+  const [identifying, setIdentifying] = useState(false)
   const [error, setError] = useState('')
   const [lastDetected, setLastDetected] = useState('')
 
@@ -80,6 +82,31 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
     }
   }, [selectedCamera, onScan])
 
+  const captureAndIdentify = async (): Promise<void> => {
+    if (!videoRef.current || !onIdentify) return
+
+    setIdentifying(true)
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = videoRef.current.videoWidth
+      canvas.height = videoRef.current.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0)
+        const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1]
+        
+        const res = await (window as any).api.products.identifyByImage(base64Image)
+        if (res.ok && res.data) {
+          onIdentify(res.data)
+        }
+      }
+    } catch (err) {
+      console.error('Identification error', err)
+    } finally {
+      setIdentifying(false)
+    }
+  }
+
   // Iniciar cámara automáticamente cuando el modal abre y hay una cámara seleccionada
   useEffect(() => {
     if (opened && selectedCamera) {
@@ -94,6 +121,7 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
       stopCamera()
       setLastDetected('')
       setError('')
+      setIdentifying(false)
     }
   }, [opened, stopCamera])
 
@@ -111,7 +139,7 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
     <Modal
       opened={opened}
       onClose={handleClose}
-      title="Escáner de Cámara"
+      title="Escáner de Cámara Inteligente"
       size="lg"
       centered
     >
@@ -153,29 +181,59 @@ export default function CameraScanner({ opened, onClose, onScan }: CameraScanner
               left: '50%',
               transform: 'translate(-50%, -50%)',
               width: '70%',
-              height: '30%',
+              height: '50%',
               border: '2px solid rgba(10, 110, 209, 0.7)',
               borderRadius: 8,
               pointerEvents: 'none'
             }} />
           )}
+          
+          {identifying && (
+            <div style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: 'white'
+            }}>
+              <Loader color="white" size="lg" mb="sm" />
+              <Text fw={600}>SOF-IA Analizando Producto...</Text>
+            </div>
+          )}
         </div>
 
-        {lastDetected && (
-          <Alert color="green" variant="light">
+        {lastDetected && !identifying && (
+          <Alert color="green" variant="light" py="xs">
             Código detectado: <strong>{lastDetected}</strong>
           </Alert>
         )}
 
         <Group justify="space-between">
-          <Button
-            variant="light"
-            leftSection={isScanning ? <IconCameraOff size={16} /> : <IconCamera size={16} />}
-            onClick={isScanning ? stopCamera : startCamera}
-            disabled={!selectedCamera || !!error}
-          >
-            {isScanning ? 'Detener' : 'Iniciar cámara'}
-          </Button>
+          <Group gap="xs">
+            <Button
+              variant="light"
+              leftSection={isScanning ? <IconCameraOff size={16} /> : <IconCamera size={16} />}
+              onClick={isScanning ? stopCamera : startCamera}
+              disabled={!selectedCamera || !!error || identifying}
+            >
+              {isScanning ? 'Detener' : 'Iniciar cámara'}
+            </Button>
+            
+            {onIdentify && isScanning && (
+              <Button
+                color="blue"
+                leftSection={identifying ? <Loader size="xs" color="white" /> : <IconSparkles size={16} />}
+                onClick={captureAndIdentify}
+                loading={identifying}
+              >
+                Identificar Producto (IA)
+              </Button>
+            )}
+          </Group>
+          
           <Button variant="default" onClick={handleClose}>
             Cerrar
           </Button>

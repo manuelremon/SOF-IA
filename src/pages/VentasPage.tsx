@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Grid, Title, Stack, Group, Badge, Tooltip } from '@mantine/core'
+import { Grid, Title, Stack, Group, Badge, Tooltip, Box } from '@mantine/core'
 import { IconBarcode } from '@tabler/icons-react'
 import ProductSearch from '../components/pos/ProductSearch'
 import Cart from '../components/pos/Cart'
@@ -8,6 +8,7 @@ import ReceiptModal from '../components/pos/ReceiptModal'
 import CameraScanner from '../components/pos/CameraScanner'
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner'
 import { useCartStore } from '../stores/cartStore'
+import { notifications } from '@mantine/notifications'
 import type { Product } from '../types'
 
 export default function VentasPage(): JSX.Element {
@@ -63,23 +64,45 @@ export default function VentasPage(): JSX.Element {
     handleBarcodeScan(code)
   }, [handleBarcodeScan])
 
+  const handleIdentify = async (data: any) => {
+    setCameraOpened(false)
+    if (!data.name) return
+    const res = await window.api.products.search(data.name)
+    if (res.ok && res.data?.length > 0) {
+      handleSelectProduct(res.data[0])
+    } else {
+      notifications.show({ title: 'IA Vision', message: `Identificado: ${data.name}. No está en catálogo.`, color: 'yellow' })
+    }
+  }
+
   return (
     <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={3}>Punto de Venta</Title>
-        {scanIndicator && (
-          <Tooltip label="Código escaneado">
-            <Badge
-              size="lg"
-              variant="light"
-              color="blue"
-              leftSection={<IconBarcode size={14} />}
-            >
-              {scanIndicator}
-            </Badge>
-          </Tooltip>
-        )}
-      </Group>
+      <Box style={{ 
+        position: 'sticky', 
+        top: -24, 
+        zIndex: 100, 
+        backgroundColor: 'var(--mantine-color-body)', 
+        margin: '-24px -24px 0 -24px', 
+        padding: '24px 24px 16px 24px',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+      }}>
+        <Group justify="space-between" align="center">
+          <Title order={3}>Punto de Venta</Title>
+          {scanIndicator && (
+            <Tooltip label="Código escaneado">
+              <Badge
+                size="lg"
+                variant="light"
+                color="blue"
+                leftSection={<IconBarcode size={14} />}
+              >
+                {scanIndicator}
+              </Badge>
+            </Tooltip>
+          )}
+        </Group>
+      </Box>
       <Grid>
         <Grid.Col span={7}>
           <Stack>
@@ -108,6 +131,7 @@ export default function VentasPage(): JSX.Element {
         opened={cameraOpened}
         onClose={() => setCameraOpened(false)}
         onScan={handleCameraScan}
+        onIdentify={handleIdentify}
       />
     </Stack>
   )

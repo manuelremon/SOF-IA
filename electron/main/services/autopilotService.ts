@@ -1,5 +1,6 @@
 import { getSqlite } from '../db/connection'
 import { createPurchaseOrder } from './purchaseOrderService'
+import { getSetting } from './settingsService'
 
 interface ReorderCandidate {
   productId: number
@@ -25,13 +26,17 @@ interface DraftPOPreview {
   estimatedTotal: number
 }
 
-export function previewAutoPOs(coverageDays = 30): DraftPOPreview[] {
-  const candidates = computeReorderCandidates(coverageDays)
+export function previewAutoPOs(coverageDays?: number): DraftPOPreview[] {
+  const finalCoverage = coverageDays || Number(getSetting('autopilot_coverage_days')) || 30
+  const candidates = computeReorderCandidates(finalCoverage)
   return groupBySUpplier(candidates)
 }
 
-export function generateAutoPOs(userId: number | null, coverageDays = 30): number[] {
-  const previews = previewAutoPOs(coverageDays)
+export function generateAutoPOs(userId: number | null, coverageDays?: number): number[] {
+  const finalCoverage = coverageDays || Number(getSetting('autopilot_coverage_days')) || 30
+  const leadTime = Number(getSetting('autopilot_lead_time_days')) || 14
+
+  const previews = previewAutoPOs(finalCoverage)
   const createdIds: number[] = []
 
   for (const preview of previews) {
@@ -40,7 +45,7 @@ export function generateAutoPOs(userId: number | null, coverageDays = 30): numbe
     const po = createPurchaseOrder({
       supplierId: preview.supplierId,
       userId: userId ?? undefined,
-      expectedDate: getExpectedDate(14),
+      expectedDate: getExpectedDate(leadTime),
       notes: 'Generado automáticamente por Piloto Automático',
       items: preview.items.map((i) => ({
         productId: i.productId,

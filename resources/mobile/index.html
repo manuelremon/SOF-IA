@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOF-IA Rompefilas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .cart-item { transition: all 0.2s; }
+        .cart-item:active { transform: scale(0.98); background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-24">
+    <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10">
+        <h1 class="text-xl font-bold">SOF-IA Rompefilas</h1>
+        <p class="text-xs opacity-80">Armado de carrito móvil</p>
+    </header>
+
+    <main class="p-4 space-y-4">
+        <!-- Buscador -->
+        <div class="relative">
+            <input type="text" id="search" placeholder="Buscar producto o código..." 
+                class="w-full p-3 rounded-lg border-2 border-indigo-200 focus:border-indigo-500 outline-none shadow-sm">
+        </div>
+
+        <!-- Resultados -->
+        <div id="results" class="space-y-2">
+            <!-- Items se cargan aquí -->
+            <p class="text-center text-gray-500 py-8">Busca productos para empezar...</p>
+        </div>
+    </main>
+
+    <!-- Carrito Flotante -->
+    <div id="cart-drawer" class="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.1)] p-4 rounded-t-2xl">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <span class="text-sm text-gray-500">Total items: <b id="cart-count">0</b></span>
+                <div class="text-2xl font-bold text-indigo-700" id="cart-total">$ 0.00</div>
+            </div>
+            <button onclick="sendOrder()" id="send-btn" disabled 
+                class="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-50 disabled:bg-gray-400">
+                Enviar a Caja
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        let searchTimeout;
+
+        const searchInput = document.getElementById('search');
+        const resultsDiv = document.getElementById('results');
+        const cartCount = document.getElementById('cart-count');
+        const cartTotal = document.getElementById('cart-total');
+        const sendBtn = document.getElementById('send-btn');
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => fetchProducts(e.target.value), 300);
+        });
+
+        async function fetchProducts(q) {
+            if (!q) {
+                resultsDiv.innerHTML = '<p class="text-center text-gray-500 py-8">Busca productos para empezar...</p>';
+                return;
+            }
+            try {
+                const res = await fetch(`/api/products?q=${q}`);
+                const { data } = await res.json();
+                renderResults(data);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderResults(products) {
+            if (products.length === 0) {
+                resultsDiv.innerHTML = '<p class="text-center text-gray-500 py-8">No se encontraron productos.</p>';
+                return;
+            }
+            resultsDiv.innerHTML = products.map(p => `
+                <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center cart-item" onclick='addToCart(${JSON.stringify(p).replace(/'/g, "&apos;")})'>
+                    <div>
+                        <div class="font-bold text-gray-800">${p.name}</div>
+                        <div class="text-sm text-gray-500">$ ${p.salePrice.toLocaleString('es-AR')}</div>
+                    </div>
+                    <div class="bg-indigo-50 text-indigo-600 font-bold p-2 rounded-lg">
+                        +
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(p) {
+            const existing = cart.find(item => item.productId === p.id);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({
+                    productId: p.id,
+                    productName: p.name,
+                    unitPrice: p.salePrice,
+                    quantity: 1
+                });
+            }
+            updateCart();
+        }
+
+        function updateCart() {
+            const total = cart.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
+            const count = cart.reduce((acc, item) => acc + item.quantity, 0);
+            
+            cartCount.innerText = count;
+            cartTotal.innerText = `$ ${total.toLocaleString('es-AR')}`;
+            sendBtn.disabled = cart.length === 0;
+        }
+
+        async function sendOrder() {
+            if (cart.length === 0) return;
+            sendBtn.disabled = true;
+            sendBtn.innerText = 'Enviando...';
+            
+            try {
+                const total = cart.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0);
+                const res = await fetch('/api/draft-orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: cart,
+                        total,
+                        deviceName: navigator.userAgent.split(' ')[0]
+                    })
+                });
+                
+                if (res.ok) {
+                    alert('¡Carrito enviado! Acércate a la caja para cobrar.');
+                    cart = [];
+                    updateCart();
+                    searchInput.value = '';
+                    resultsDiv.innerHTML = '<p class="text-center text-gray-500 py-8">Busca productos para empezar...</p>';
+                } else {
+                    alert('Error al enviar el carrito.');
+                }
+            } catch (err) {
+                alert('Error de conexión con el servidor local.');
+            } finally {
+                sendBtn.disabled = cart.length === 0;
+                sendBtn.innerText = 'Enviar a Caja';
+            }
+        }
+    </script>
+</body>
+</html>

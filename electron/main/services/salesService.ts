@@ -19,6 +19,14 @@ export function completeSale(data: {
   discountType?: string | null
   discountValue?: number
   notes?: string
+  auditImagePath?: string
+  // AFIP Fields
+  afipInvoiceType?: number
+  afipInvoiceNumber?: string
+  afipCae?: string
+  afipCaeExpiration?: string
+  afipDocType?: number
+  afipDocNumber?: string
 }) {
   const db = getDb()
   const receiptNumber = generateReceiptNumber()
@@ -76,7 +84,15 @@ export function completeSale(data: {
         change,
         paymentMethod: data.paymentMethod,
         status: 'completada',
-        notes: data.notes ?? null
+        notes: data.notes ?? null,
+        auditImagePath: data.auditImagePath,
+        // Store AFIP data
+        afipInvoiceType: data.afipInvoiceType ?? null,
+        afipInvoiceNumber: data.afipInvoiceNumber ?? null,
+        afipCae: data.afipCae ?? null,
+        afipCaeExpiration: data.afipCaeExpiration ?? null,
+        afipDocType: data.afipDocType ?? null,
+        afipDocNumber: data.afipDocNumber ?? null
       })
       .returning()
       .get()
@@ -145,6 +161,7 @@ export function listSales(filters?: { from?: string; to?: string; paymentMethod?
       paymentMethod: schema.sales.paymentMethod,
       status: schema.sales.status,
       notes: schema.sales.notes,
+      auditImagePath: schema.sales.auditImagePath,
       createdAt: schema.sales.createdAt,
       customerName: schema.customers.name,
       userName: schema.users.name
@@ -173,6 +190,7 @@ export function getSaleById(id: number) {
       paymentMethod: schema.sales.paymentMethod,
       status: schema.sales.status,
       notes: schema.sales.notes,
+      auditImagePath: schema.sales.auditImagePath,
       createdAt: schema.sales.createdAt,
       customerName: schema.customers.name,
       userName: schema.users.name

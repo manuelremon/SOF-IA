@@ -15,7 +15,14 @@ export function registerSettingsHandlers(): void {
     catch (err: any) { return { ok: false, error: err.message } }
   })
   ipcMain.handle('settings:setBatch', async (_e, entries) => {
-    try { settingsService.setSettingsBatch(entries); return { ok: true } }
+    try {
+      settingsService.setSettingsBatch(entries)
+      if (entries.auto_backup_interval_hours !== undefined) {
+        const interval = Number(entries.auto_backup_interval_hours)
+        require('../services/backupService').startAutoBackupTimer(interval)
+      }
+      return { ok: true }
+    }
     catch (err: any) { return { ok: false, error: err.message } }
   })
 }

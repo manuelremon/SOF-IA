@@ -132,6 +132,8 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
     if (!input.trim() || loading) return
 
     const userText = input.trim()
+    const isAnalysis = userText.startsWith('?') || userText.toLowerCase().includes('analiz')
+    
     setInput('')
     
     const newMessages: Message[] = [...messages, { id: Date.now().toString(), role: 'user', content: userText }]
@@ -139,16 +141,30 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
     setLoading(true)
 
     try {
-      const history = messages
-        .filter(m => m.id !== '1') // Ignorar mensaje hardcodeado inicial
-        .map(m => ({ role: m.role, content: m.content }))
-
-      const res = await window.api.ai.ask(userText, history)
+      let res;
+      if (isAnalysis) {
+        res = await window.api.ai.analyze(userText.replace(/^\?/, ''))
+      } else {
+        const history = messages
+          .filter(m => m.id !== '1')
+          .map(m => ({ role: m.role, content: m.content }))
+        res = await window.api.ai.ask(userText, history)
+      }
       
       if (res.ok && res.data?.success) {
         const text = res.data.text
-        setMessages(prev => [...prev, { id: Date.now().toString() + 'm', role: 'model', content: text }])
-        speakText(text) // Hablar la respuesta en voz alta si está habilitado
+        
+        // Manejo de acciones estructurales (Voz a Acción)
+        try {
+          const actionMatch = text.match(/\{"action":.*\}/)
+          if (actionMatch) {
+            const actionObj = JSON.parse(actionMatch[0])
+            handleVoiceAction(actionObj)
+          }
+        } catch (e) {}
+
+        setMessages(prev => [...prev, { id: Date.now().toString() + 'm', role: 'model', content: text.replace(/\{"action":.*\}/, '').trim() }])
+        speakText(text.replace(/\{"action":.*\}/, '').trim())
       } else {
         setMessages(prev => [...prev, { id: Date.now().toString() + 'e', role: 'model', content: `Error: ${res.error || res.data?.error || 'No pude responder en este momento.'}` }])
       }
@@ -157,6 +173,21 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
     }
 
     setLoading(false)
+  }
+
+  const handleVoiceAction = (actionObj: any) => {
+    if (actionObj.action === 'ADD_CART') {
+      window.api.products.search(actionObj.query).then((res: any) => {
+        if (res.ok && res.data?.length > 0) {
+           const p = res.data[0]
+           // Disparamos un evento global o usamos cartStore si estuviera disponible aquí.
+           // Como cartStore es un hook, lo mejor es emitir un CustomEvent que CajaPage escuche.
+           window.dispatchEvent(new CustomEvent('sofia-action', { 
+             detail: { type: 'ADD_ITEM', product: p, quantity: actionObj.quantity || 1 } 
+           }))
+        }
+      })
+    }
   }
 
   // Parar el dictado si ocultamos el drawer
@@ -202,45 +233,52 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
         onClose={() => setOpened(false)}
         title={
           <Group gap="sm">
-            <IconMessageChatbot color="#228be6" />
-            <Text fw={600}>Asistente Inteligente</Text>
+            <IconMessageChatbot color="#228be6" stroke={2} />
+            <Text fw={800} style={{ letterSpacing: '-0.5px' }}>Asistente SOF-IA</Text>
           </Group>
         }
         position="right"
         size="md"
-        padding="md"
-        styles={{ content: { display: 'flex', flexDirection: 'column' }, body: { flex: 1, display: 'flex', flexDirection: 'column', padding: '0 !important' }, header: { paddingBottom: 10, borderBottom: '1px solid #eee' } }}
+        padding={0}
+        styles={{ 
+          content: { display: 'flex', flexDirection: 'column' }, 
+          body: { flex: 1, display: 'flex', flexDirection: 'column', padding: 0 }, 
+          header: { padding: '16px 20px', borderBottom: '1px solid #f1f3f5', marginBottom: 0 } 
+        }}
       >
-        <Group justify="flex-end" px="md" pt="xs">
+        <Group justify="flex-end" px="md" py="xs" bg="gray.0" style={{ borderBottom: '1px solid #f1f3f5' }}>
            <Tooltip label={autoSpeak ? "Voz Activada" : "Voz Desactivada"}>
-              <ActionIcon variant="subtle" color={autoSpeak ? 'blue' : 'gray'} onClick={() => setAutoSpeak(!autoSpeak)}>
+              <ActionIcon variant="light" radius="xl" color={autoSpeak ? 'blue' : 'gray'} onClick={() => setAutoSpeak(!autoSpeak)}>
                  {autoSpeak ? <IconVolume size={18} /> : <IconVolumeOff size={18} />}
               </ActionIcon>
            </Tooltip>
         </Group>
 
-        <ScrollArea flex={1} p="md" viewportRef={scrollRef}>
-          <Stack gap="md">
+        <ScrollArea flex={1} p="xl" viewportRef={scrollRef} bg="#F8F9FA">
+          <Stack gap="lg">
             {messages.map((m) => (
-              <Group key={m.id} align="flex-start" wrap="nowrap" justify={m.role === 'user' ? 'flex-end' : 'flex-start'}>
+              <Group key={m.id} align="flex-start" wrap="nowrap" justify={m.role === 'user' ? 'flex-end' : 'flex-start'} gap="xs">
                 {m.role === 'model' && <BotAvatar />}
                 <Paper
-                  withBorder
-                  p="sm"
-                  w="75%"
-                  bg={m.role === 'user' ? 'blue.6' : 'gray.0'}
+                  p="md"
+                  shadow="sm"
+                  bg={m.role === 'user' ? 'sap.6' : 'white'}
                   c={m.role === 'user' ? 'white' : 'dark'}
-                  style={{ borderRadius: m.role === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0' }}
+                  style={{ 
+                    maxWidth: '85%',
+                    borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    border: m.role === 'model' ? '1px solid #e9ecef' : 'none'
+                  }}
                 >
-                  <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{m.content}</Text>
+                  <Text size="sm" fw={500} style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{m.content}</Text>
                 </Paper>
                 {m.role === 'user' && <UserAvatar />}
               </Group>
             ))}
             {loading && (
-              <Group align="flex-start" wrap="nowrap">
+              <Group align="flex-start" wrap="nowrap" gap="xs">
                 <BotAvatar />
-                <Paper withBorder p="sm" bg="gray.0" style={{ borderRadius: '12px 12px 12px 0' }}>
+                <Paper p="md" shadow="sm" bg="white" style={{ borderRadius: '16px 16px 16px 4px', border: '1px solid #e9ecef' }}>
                   <Loader size="xs" color="gray" type="dots" />
                 </Paper>
               </Group>
@@ -248,25 +286,46 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
           </Stack>
         </ScrollArea>
 
-        <Box p="md" style={{ borderTop: '1px solid #eee' }}>
+        <Box p="lg" style={{ borderTop: '1px solid #f1f3f5', backgroundColor: 'white' }}>
           <TextInput
-            placeholder="Escribe o usa el micrófono..."
+            placeholder="¿En qué puedo ayudarte?"
+            size="md"
+            radius="md"
             value={input}
             onChange={(e) => setInput(e.currentTarget.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSend() }}
-            rightSectionWidth={80}
+            rightSectionWidth={90}
             rightSection={
-              <Group gap="xs" justify="center">
-                <ActionIcon onClick={toggleListening} color={isListening ? 'red' : 'gray'} variant="light" size="sm">
-                  <IconMicrophone size={16} />
+              <Group gap={6} justify="center" pr={8}>
+                <ActionIcon 
+                  onClick={toggleListening} 
+                  color={isListening ? 'red' : 'gray'} 
+                  variant={isListening ? 'filled' : 'light'} 
+                  radius="xl"
+                  size="md"
+                >
+                  <IconMicrophone size={18} />
                 </ActionIcon>
-                <ActionIcon onClick={handleSend} color="blue" variant="light" loading={loading} disabled={!input.trim()} size="sm">
-                  <IconSend size={16} />
+                <ActionIcon 
+                  onClick={handleSend} 
+                  color="sap" 
+                  variant="filled" 
+                  radius="xl"
+                  size="md"
+                  loading={loading} 
+                  disabled={!input.trim()}
+                >
+                  <IconSend size={18} />
                 </ActionIcon>
               </Group>
             }
           />
-          {isListening && <Text size="xs" c="red" ta="right" mt={4}>Escuchando...</Text>}
+          {isListening && (
+            <Group gap={4} justify="center" mt={8}>
+              <Loader size={10} color="red" />
+              <Text size="xs" c="red" fw={700} tt="uppercase" style={{ letterSpacing: '1px' }}>Escuchando...</Text>
+            </Group>
+          )}
         </Box>
       </Drawer>
 

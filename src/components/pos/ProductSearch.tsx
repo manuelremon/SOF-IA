@@ -13,7 +13,7 @@ import {
   Divider
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
-import { IconSearch, IconCamera, IconBarcode, IconPackage, IconAlertTriangle } from '@tabler/icons-react'
+import { IconSearch, IconScan, IconBarcode, IconBoxMultiple, IconAlertTriangle } from '@tabler/icons-react'
 import { useSettingsStore } from '../../stores/settingsStore'
 import type { Product } from '../../types'
 
@@ -33,7 +33,6 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
 
   const { settings } = useSettingsStore()
   const scannerMode = settings?.scanner_mode || 'both'
-  const allowCamera = scannerMode === 'both' || scannerMode === 'camera'
 
   // Cargar todos los productos al montar
   useEffect(() => {
@@ -137,28 +136,44 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
           data-barcode-target="true"
           style={{ flex: 1 }}
         />
-        {allowCamera && (
-          <Tooltip label="Escanear con cámara" position="bottom">
-            <ActionIcon
-              variant="light"
-              color="blue"
-              size="lg"
-              h={42}
-              w={42}
-              onClick={onCameraOpen}
-            >
-              <IconCamera size={20} />
-            </ActionIcon>
-          </Tooltip>
-        )}
+        {/* Search Input and Scanner Button */}
+        <style>{`
+          @keyframes innerBarScan {
+            0% { transform: translateY(-4px); }
+            100% { transform: translateY(4px); }
+          }
+          .icon-scan-custom path:last-child {
+            stroke: #12f735 !important;
+            filter: drop-shadow(0 0 2px rgba(18, 247, 53, 0.8));
+            animation: innerBarScan 1s ease-in-out infinite alternate;
+          }
+        `}</style>
+        <Tooltip label="Escanear" position="bottom">
+          <ActionIcon
+            variant="light"
+            color="blue"
+            size="lg"
+            h={42}
+            w={42}
+            onClick={() => {
+              if (scannerMode === 'usb') {
+                inputRef.current?.focus()
+              } else {
+                onCameraOpen()
+              }
+            }}
+          >
+            <IconScan size={22} className="icon-scan-custom" color="#228be6" />
+          </ActionIcon>
+        </Tooltip>
       </Group>
 
       <Paper shadow="xs" withBorder>
         <Group px="sm" py={6} bg="gray.0" justify="space-between">
           <Group gap={6}>
-            <IconPackage size={14} color="#868e96" />
+            <IconBoxMultiple size={14} color="#868e96" />
             <Text size="xs" c="dimmed" fw={600} tt="uppercase">
-              Catálogo
+              Stock
             </Text>
           </Group>
           <Text size="xs" c="dimmed">

@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react'
 import {
   Title, Stack, Tabs, Group, Button, Table, Text, Paper, Select,
-  SimpleGrid, Card
+  SimpleGrid, Card, Box, ActionIcon, RingProgress, Badge, Modal, rem
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
 import {
   IconReportAnalytics, IconChartBar, IconCreditCard, IconUsers, IconCoin,
-  IconTruck, IconUserSearch
+  IconTruck, IconUserSearch, IconEye, IconCamera
 } from '@tabler/icons-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { RingProgress, Badge } from '@mantine/core'
 
 import 'dayjs/locale/es'
 
@@ -33,24 +32,29 @@ export default function ReportesPage(): JSX.Element {
   const [activeTab, setActiveTab] = useState<string | null>('periodo')
   const [supplierRanking, setSupplierRanking] = useState<any[]>([])
   const [segmentation, setSegmentation] = useState<any[]>([])
+  const [sales, setSales] = useState<any[]>([])
+  const [auditImage, setAuditImage] = useState<string | null>(null)
+  const [auditOpened, setAuditOpened] = useState(false)
 
   const from = dateRange[0]?.toISOString().slice(0, 10) ?? ''
   const to = dateRange[1]?.toISOString().slice(0, 10) ?? ''
 
   const loadData = async (): Promise<void> => {
     if (!from || !to) return
-    const [rPeriod, rProduct, rPayment, rCustomer, rProfit] = await Promise.all([
+    const [rPeriod, rProduct, rPayment, rCustomer, rProfit, rSales] = await Promise.all([
       window.api.reports.byPeriod(from, to, groupBy),
       window.api.reports.byProduct(from, to),
       window.api.reports.byPaymentMethod(from, to),
       window.api.reports.byCustomer(from, to),
-      window.api.reports.profit(from, to)
+      window.api.reports.profit(from, to),
+      window.api.sales.list({ from, to })
     ])
     if (rPeriod.ok) setPeriodData(rPeriod.data as any[])
     if (rProduct.ok) setProductData(rProduct.data as any[])
     if (rPayment.ok) setPaymentData(rPayment.data as any[])
     if (rCustomer.ok) setCustomerData(rCustomer.data as any[])
     if (rProfit.ok) setProfitData(rProfit.data)
+    if (rSales.ok) setSales(rSales.data as any[])
   }
 
   useEffect(() => { loadData() }, [from, to, groupBy])
@@ -76,59 +80,78 @@ export default function ReportesPage(): JSX.Element {
 
   return (
     <Stack gap="md">
-      <Title order={3}>Reportes</Title>
+      <Box style={{ 
+        position: 'sticky', 
+        top: -24, 
+        zIndex: 100, 
+        backgroundColor: 'var(--mantine-color-body)', 
+        margin: '-24px -24px 0 -24px', 
+        padding: '24px 24px 8px 24px',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+      }}>
+        <Stack gap="md">
+          <Group justify="space-between" align="center">
+            <Title order={3}>Reportes</Title>
+            <Group align="flex-end">
+              <DatePickerInput
+                type="range"
+                size="xs"
+                placeholder="Rango de fechas"
+                value={dateRange}
+                onChange={setDateRange}
+                locale="es"
+                valueFormat="DD/MM/YYYY"
+                clearable={false}
+                w={220}
+              />
+              <Button size="xs" onClick={loadData}>Actualizar</Button>
+            </Group>
+          </Group>
 
-      <Group>
-        <DatePickerInput
-          type="range"
-          label="Rango de fechas"
-          value={dateRange}
-          onChange={setDateRange}
-          locale="es"
-          valueFormat="DD/MM/YYYY"
-          clearable={false}
-        />
-        <Button mt={24} onClick={loadData}>Actualizar</Button>
-      </Group>
+          {/* Profit summary cards inside sticky header for quick reference */}
+          {profitData && (
+            <SimpleGrid cols={{ base: 2, md: 4 }} gap="xs">
+              <Paper p="xs" radius="sm">
+                <Text size="10px" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Ingresos</Text>
+                <Text fw={800} size="sm">{fmt(profitData.revenue ?? 0)}</Text>
+              </Paper>
+              <Paper p="xs" radius="sm">
+                <Text size="10px" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Costo</Text>
+                <Text fw={800} size="sm">{fmt(profitData.cost ?? 0)}</Text>
+              </Paper>
+              <Paper p="xs" radius="sm" style={{ borderLeft: '3px solid #4CAF50' }}>
+                <Text size="10px" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Ganancia</Text>
+                <Text fw={800} size="sm" c="green.7">{fmt(profitData.profit ?? 0)}</Text>
+              </Paper>
+              <Paper p="xs" radius="sm" style={{ borderLeft: '3px solid #2196F3' }}>
+                <Text size="10px" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Margen</Text>
+                <Text fw={800} size="sm" c="blue.7">{profitData.marginPercent ?? 0}%</Text>
+              </Paper>
+            </SimpleGrid>
+          )}
 
-      {/* Profit summary cards */}
-      {profitData && (
-        <SimpleGrid cols={4}>
-          <Card withBorder p="sm">
-            <Text size="xs" c="dimmed">Ingresos</Text>
-            <Text fw={700} size="lg">{fmt(profitData.revenue ?? 0)}</Text>
-          </Card>
-          <Card withBorder p="sm">
-            <Text size="xs" c="dimmed">Costo</Text>
-            <Text fw={700} size="lg">{fmt(profitData.cost ?? 0)}</Text>
-          </Card>
-          <Card withBorder p="sm">
-            <Text size="xs" c="dimmed">Ganancia</Text>
-            <Text fw={700} size="lg" c="green">{fmt(profitData.profit ?? 0)}</Text>
-          </Card>
-          <Card withBorder p="sm">
-            <Text size="xs" c="dimmed">Margen</Text>
-            <Text fw={700} size="lg" c="blue">{profitData.marginPercent ?? 0}%</Text>
-          </Card>
-        </SimpleGrid>
-      )}
+          <Tabs value={activeTab} onChange={setActiveTab} variant="pills" size="xs" radius="md">
+            <Tabs.List>
+              <Tabs.Tab value="periodo" leftSection={<IconChartBar size={14} />}>Ventas & Período</Tabs.Tab>
+              <Tabs.Tab value="producto" leftSection={<IconReportAnalytics size={14} />}>Por Producto</Tabs.Tab>
+              <Tabs.Tab value="pago" leftSection={<IconCreditCard size={14} />}>Métodos de Pago</Tabs.Tab>
+              <Tabs.Tab value="cliente" leftSection={<IconUsers size={14} />}>Ranking Clientes</Tabs.Tab>
+              <Tabs.Tab value="proveedores" leftSection={<IconTruck size={14} />}>Proveedores</Tabs.Tab>
+              <Tabs.Tab value="segmentacion" leftSection={<IconUserSearch size={14} />}>Segmentación RFM</Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
+        </Stack>
+      </Box>
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-          <Tabs.Tab value="periodo" leftSection={<IconChartBar size={16} />}>Por Período</Tabs.Tab>
-          <Tabs.Tab value="producto" leftSection={<IconReportAnalytics size={16} />}>Por Producto</Tabs.Tab>
-          <Tabs.Tab value="pago" leftSection={<IconCreditCard size={16} />}>Por Método</Tabs.Tab>
-          <Tabs.Tab value="cliente" leftSection={<IconUsers size={16} />}>Por Cliente</Tabs.Tab>
-          <Tabs.Tab value="proveedores" leftSection={<IconTruck size={16} />}>Proveedores</Tabs.Tab>
-          <Tabs.Tab value="segmentacion" leftSection={<IconUserSearch size={16} />}>Clientes RFM</Tabs.Tab>
-        </Tabs.List>
-
+      <Tabs value={activeTab} onChange={setActiveTab} variant="unstyled">
         <Tabs.Panel value="periodo" pt="md">
-          <Group mb="md">
+          <Group justify="space-between" mb="lg">
+            <Title order={4}>Evolución de Ingresos</Title>
             <Select
-              label="Agrupar por"
               size="xs"
               w={150}
+              label="Agrupar por"
               value={groupBy}
               onChange={(v) => setGroupBy(v ?? 'day')}
               data={[
@@ -138,99 +161,106 @@ export default function ReportesPage(): JSX.Element {
               ]}
             />
           </Group>
-          <Paper withBorder p="md" mb="md">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={periodData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip formatter={(v: number) => fmt(v)} />
-                <Bar dataKey="total" fill="#0A6ED1" name="Ventas" />
-              </BarChart>
-            </ResponsiveContainer>
+          
+          <Paper p="lg" mb="xl">
+            <Box h={300}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={periodData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f3f5" />
+                  <XAxis dataKey="period" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    cursor={{ fill: '#f8f9fa' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    formatter={(v: number) => fmt(v)} 
+                  />
+                  <Bar dataKey="total" fill="#2196F3" radius={[4, 4, 0, 0]} name="Ingresos" barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
           </Paper>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Período</Table.Th>
-                <Table.Th ta="right">Ventas</Table.Th>
-                <Table.Th ta="right">Total</Table.Th>
-                <Table.Th ta="right">Descuentos</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {periodData.map((r: any) => (
-                <Table.Tr key={r.period}>
-                  <Table.Td>{r.period}</Table.Td>
-                  <Table.Td ta="right">{r.count}</Table.Td>
-                  <Table.Td ta="right">{fmt(r.total)}</Table.Td>
-                  <Table.Td ta="right">{fmt(r.discountTotal)}</Table.Td>
-                </Table.Tr>
-              ))}
-              {periodData.length === 0 && (
+
+          <Paper p="lg">
+            <Title order={4} mb="md">Detalle de Ventas</Title>
+            <Table striped highlightOnHover verticalSpacing="sm" stickyHeader stickyHeaderOffset={200}>
+              <Table.Thead>
                 <Table.Tr>
-                  <Table.Td colSpan={4}><Text c="dimmed" ta="center">Sin datos</Text></Table.Td>
+                  <Table.Th>Ticket</Table.Th>
+                  <Table.Th>Fecha</Table.Th>
+                  <Table.Th>Cliente</Table.Th>
+                  <Table.Th ta="right">Importe</Table.Th>
+                  <Table.Th ta="center">Auditoría</Table.Th>
                 </Table.Tr>
-              )}
-            </Table.Tbody>
-          </Table>
+              </Table.Thead>
+              <Table.Tbody>
+                {sales.map((s) => (
+                  <Table.Tr key={s.id}>
+                    <Table.Td><Text size="sm" fw={700}>{s.receiptNumber}</Text></Table.Td>
+                    <Table.Td><Text size="sm">{s.createdAt?.slice(0, 16)}</Text></Table.Td>
+                    <Table.Td><Text size="sm" fw={500}>{s.customerName || 'Consumidor Final'}</Text></Table.Td>
+                    <Table.Td ta="right"><Text size="sm" fw={800} c="sap.7">{fmt(s.total)}</Text></Table.Td>
+                    <Table.Td ta="center">
+                      {s.auditImagePath ? (
+                        <ActionIcon 
+                          variant="light" 
+                          color="blue" 
+                          size="sm"
+                          onClick={() => {
+                            setAuditImage(s.auditImagePath)
+                            setAuditOpened(true)
+                          }}
+                        >
+                          <IconCamera size={16} />
+                        </ActionIcon>
+                      ) : (
+                        <Text size="xs" c="dimmed">—</Text>
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Paper>
         </Tabs.Panel>
 
         <Tabs.Panel value="producto" pt="md">
-          <Table striped highlightOnHover>
+          <Table striped highlightOnHover stickyHeader stickyHeaderOffset={200}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Producto</Table.Th>
-                <Table.Th ta="right">Cantidad</Table.Th>
+                <Table.Th ta="right">Vendidos</Table.Th>
                 <Table.Th ta="right">Ingresos</Table.Th>
                 <Table.Th ta="right">Descuentos</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {productData.map((r: any, i: number) => (
-                <Table.Tr key={i}>
+              {productData.map((r: any) => (
+                <Table.Tr key={r.productId}>
                   <Table.Td>{r.productName}</Table.Td>
                   <Table.Td ta="right">{r.totalQty}</Table.Td>
                   <Table.Td ta="right">{fmt(r.totalRevenue)}</Table.Td>
                   <Table.Td ta="right">{fmt(r.totalDiscount)}</Table.Td>
                 </Table.Tr>
               ))}
-              {productData.length === 0 && (
-                <Table.Tr>
-                  <Table.Td colSpan={4}><Text c="dimmed" ta="center">Sin datos</Text></Table.Td>
-                </Table.Tr>
-              )}
             </Table.Tbody>
           </Table>
         </Tabs.Panel>
 
         <Tabs.Panel value="pago" pt="md">
-          <SimpleGrid cols={3} mb="md">
-            {paymentData.map((r: any) => (
-              <Card withBorder p="md" key={r.method}>
-                <Group justify="space-between">
-                  <div>
-                    <Text size="xs" c="dimmed">{methodLabels[r.method] ?? r.method}</Text>
-                    <Text fw={700} size="lg">{fmt(r.total)}</Text>
-                  </div>
-                  <IconCoin size={32} color="#0A6ED1" opacity={0.5} />
-                </Group>
-                <Text size="xs" c="dimmed" mt="xs">{r.count} ventas</Text>
-              </Card>
-            ))}
-          </SimpleGrid>
-          <Table striped highlightOnHover>
+          <Table stickyHeader stickyHeaderOffset={200}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Método</Table.Th>
-                <Table.Th ta="right">Ventas</Table.Th>
-                <Table.Th ta="right">Total</Table.Th>
+                <Table.Th ta="right">Cant. Ventas</Table.Th>
+                <Table.Th ta="right">Total Recaudado</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {paymentData.map((r: any) => (
-                <Table.Tr key={r.method}>
-                  <Table.Td>{methodLabels[r.method] ?? r.method}</Table.Td>
+                <Table.Tr key={r.paymentMethod}>
+                  <Table.Td style={{ textTransform: 'capitalize' }}>
+                    {methodLabels[r.paymentMethod] || r.paymentMethod}
+                  </Table.Td>
                   <Table.Td ta="right">{r.count}</Table.Td>
                   <Table.Td ta="right">{fmt(r.total)}</Table.Td>
                 </Table.Tr>
@@ -240,124 +270,109 @@ export default function ReportesPage(): JSX.Element {
         </Tabs.Panel>
 
         <Tabs.Panel value="cliente" pt="md">
-          <Table striped highlightOnHover>
+          <Table striped highlightOnHover stickyHeader stickyHeaderOffset={200}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Cliente</Table.Th>
-                <Table.Th ta="right">Compras</Table.Th>
-                <Table.Th ta="right">Total</Table.Th>
+                <Table.Th ta="right">Cant. Compras</Table.Th>
+                <Table.Th ta="right">Total Invertido</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {customerData.map((r: any, i: number) => (
-                <Table.Tr key={i}>
-                  <Table.Td>{r.customerName}</Table.Td>
+              {customerData.map((r: any) => (
+                <Table.Tr key={r.customerId}>
+                  <Table.Td>{r.customerName || 'Consumidor Final'}</Table.Td>
                   <Table.Td ta="right">{r.count}</Table.Td>
                   <Table.Td ta="right">{fmt(r.total)}</Table.Td>
                 </Table.Tr>
               ))}
-              {customerData.length === 0 && (
-                <Table.Tr>
-                  <Table.Td colSpan={3}><Text c="dimmed" ta="center">Sin datos</Text></Table.Td>
-                </Table.Tr>
-              )}
             </Table.Tbody>
           </Table>
         </Tabs.Panel>
 
         <Tabs.Panel value="proveedores" pt="md">
-          <Text fw={600} mb="md">Ranking de Proveedores</Text>
-          {supplierRanking.length === 0 ? (
-            <Text c="dimmed" ta="center">Sin datos de proveedores. Se necesitan órdenes de compra con recepciones.</Text>
-          ) : (
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>#</Table.Th>
-                  <Table.Th>Proveedor</Table.Th>
-                  <Table.Th ta="center">Puntualidad</Table.Th>
-                  <Table.Th ta="center">Cumplimiento</Table.Th>
-                  <Table.Th ta="center">Est. Costos</Table.Th>
-                  <Table.Th ta="center">Score</Table.Th>
-                  <Table.Th ta="right">OCs</Table.Th>
+          <Table striped highlightOnHover stickyHeader stickyHeaderOffset={200}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Proveedor</Table.Th>
+                <Table.Th ta="center">Calificación</Table.Th>
+                <Table.Th ta="right">Tiempo Entrega</Table.Th>
+                <Table.Th ta="right">Items Recibidos</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {supplierRanking.map((r: any) => (
+                <Table.Tr key={r.id}>
+                  <Table.Td>{r.name}</Table.Td>
+                  <Table.Td ta="center">
+                    <Badge color={r.score > 80 ? 'green' : r.score > 50 ? 'orange' : 'red'}>
+                      {r.score}%
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td ta="right">{r.avgLeadTime ? `${r.avgLeadTime} días` : '—'}</Table.Td>
+                  <Table.Td ta="right">{r.totalItems}</Table.Td>
                 </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {supplierRanking.map((s: any, i: number) => (
-                  <Table.Tr key={s.supplierId}>
-                    <Table.Td>{i + 1}</Table.Td>
-                    <Table.Td fw={500}>{s.supplierName}</Table.Td>
-                    <Table.Td ta="center">
-                      <RingProgress size={40} thickness={4} roundCaps
-                        sections={[{ value: s.punctuality, color: s.punctuality > 70 ? 'green' : s.punctuality > 40 ? 'yellow' : 'red' }]}
-                        label={<Text size="xs" ta="center">{s.punctuality}</Text>}
-                      />
-                    </Table.Td>
-                    <Table.Td ta="center">
-                      <RingProgress size={40} thickness={4} roundCaps
-                        sections={[{ value: s.fulfillment, color: s.fulfillment > 70 ? 'green' : s.fulfillment > 40 ? 'yellow' : 'red' }]}
-                        label={<Text size="xs" ta="center">{s.fulfillment}</Text>}
-                      />
-                    </Table.Td>
-                    <Table.Td ta="center">
-                      <RingProgress size={40} thickness={4} roundCaps
-                        sections={[{ value: s.costStability, color: s.costStability > 70 ? 'green' : s.costStability > 40 ? 'yellow' : 'red' }]}
-                        label={<Text size="xs" ta="center">{s.costStability}</Text>}
-                      />
-                    </Table.Td>
-                    <Table.Td ta="center">
-                      <Badge size="lg" color={s.composite > 70 ? 'green' : s.composite > 40 ? 'yellow' : 'red'}>
-                        {s.composite}
-                      </Badge>
-                    </Table.Td>
-                    <Table.Td ta="right">{s.totalPOs}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          )}
+              ))}
+            </Table.Tbody>
+          </Table>
         </Tabs.Panel>
 
         <Tabs.Panel value="segmentacion" pt="md">
-          <Text fw={600} mb="md">Segmentación de Clientes (RFM)</Text>
-          {segmentation.length === 0 ? (
-            <Text c="dimmed" ta="center">Sin datos de clientes.</Text>
-          ) : (
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Cliente</Table.Th>
-                  <Table.Th ta="center">Segmento</Table.Th>
-                  <Table.Th ta="right">Compras</Table.Th>
-                  <Table.Th ta="right">Valor Total</Table.Th>
-                  <Table.Th ta="right">Ticket Prom.</Table.Th>
-                  <Table.Th>Última Compra</Table.Th>
+          <SimpleGrid cols={3} mb="md">
+            {segmentation.map((s: any) => (
+              <Card key={s.segment} withBorder>
+                <Text size="xs" tt="uppercase" fw={700} c="dimmed">{s.segment}</Text>
+                <Group justify="space-between" align="flex-end" mt="sm">
+                  <Text size="xl" fw={800}>{s.count}</Text>
+                  <RingProgress 
+                    size={60} 
+                    thickness={6} 
+                    sections={[{ value: 100, color: 'blue' }]} 
+                    label={<Text size="xs" ta="center" fw={700}>{Math.round((s.count / customerData.length) * 100)}%</Text>}
+                  />
+                </Group>
+              </Card>
+            ))}
+          </SimpleGrid>
+          <Table stickyHeader stickyHeaderOffset={200}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Cliente</Table.Th>
+                <Table.Th>Segmento</Table.Th>
+                <Table.Th ta="right">Valor</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {segmentation.flatMap(s => s.customers).map((c: any) => (
+                <Table.Tr key={c.id}>
+                  <Table.Td>{c.name}</Table.Td>
+                  <Table.Td>
+                    <Badge variant="dot" size="sm">{c.segment}</Badge>
+                  </Table.Td>
+                  <Table.Td ta="right">{fmt(c.lifetimeValue)}</Table.Td>
                 </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {segmentation.map((c: any) => {
-                  const segColor = c.segment === 'VIP' ? 'green'
-                    : c.segment === 'En riesgo' ? 'red'
-                    : c.segment === 'Nuevo' ? 'blue'
-                    : 'gray'
-                  return (
-                    <Table.Tr key={c.customerId}>
-                      <Table.Td fw={500}>{c.customerName}</Table.Td>
-                      <Table.Td ta="center">
-                        <Badge color={segColor} variant="light">{c.segment}</Badge>
-                      </Table.Td>
-                      <Table.Td ta="right">{c.totalPurchases}</Table.Td>
-                      <Table.Td ta="right">{fmt(c.lifetimeValue)}</Table.Td>
-                      <Table.Td ta="right">{fmt(c.avgTicket)}</Table.Td>
-                      <Table.Td>{c.lastPurchase?.slice(0, 10) ?? '—'}</Table.Td>
-                    </Table.Tr>
-                  )
-                })}
-              </Table.Tbody>
-            </Table>
-          )}
+              ))}
+            </Table.Tbody>
+          </Table>
         </Tabs.Panel>
       </Tabs>
+
+      <Modal 
+        opened={auditOpened} 
+        onClose={() => setAuditOpened(false)} 
+        title="Foto de Auditoría de Venta"
+        size="lg"
+      >
+        {auditImage ? (
+          <img 
+            src={auditImage} 
+            alt="Auditoría" 
+            style={{ width: '100%', borderRadius: '8px', border: '1px solid #eee' }} 
+          />
+        ) : (
+          <Text ta="center" py="xl" c="dimmed">No hay imagen disponible</Text>
+        )}
+      </Modal>
     </Stack>
   )
 }

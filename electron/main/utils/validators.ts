@@ -18,7 +18,14 @@ export const CompleteSaleSchema = z.object({
   items: z.array(SaleItemSchema).min(1),
   discountType: z.string().nullable().optional(),
   discountValue: z.number().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  // AFIP fields
+  afipInvoiceType: z.number().optional(),
+  afipInvoiceNumber: z.string().optional(),
+  afipCae: z.string().optional(),
+  afipCaeExpiration: z.string().optional(),
+  afipDocType: z.number().optional(),
+  afipDocNumber: z.string().optional()
 })
 
 // Tipos inferidos

@@ -8,12 +8,13 @@ import {
   Button,
   Stack,
   Box,
-  Alert
+  Alert,
+  Divider,
+  Title
 } from '@mantine/core'
 import { IconLock, IconAlertCircle } from '@tabler/icons-react'
 import type { AuthUser } from '../stores/authStore'
 import LogoApp from '../../resources/assets/LogoSof-IA.png'
-import './LoginPage.css'
 
 interface LoginPageProps {
   onLogin: (user: AuthUser) => void
@@ -25,18 +26,6 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splashSeen'))
-
-  const handleSplashEnd = () => {
-    sessionStorage.setItem('splashSeen', 'true')
-    setShowSplash(false)
-  }
-
-  useEffect(() => {
-    if (!showSplash) return undefined;
-    const timer = setTimeout(handleSplashEnd, 3500);
-    return () => clearTimeout(timer);
-  }, [showSplash])
 
   useEffect(() => {
     window.api.users.list().then((res: any) => {
@@ -79,81 +68,47 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
     <Box
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #354A5F 0%, #0A6ED1 100%)'
+        background: 'linear-gradient(135deg, #1565C0 0%, #0D47A1 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}
     >
-      {showSplash ? (
-        <Box style={{ position: 'absolute', inset: 0, backgroundColor: '#e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div className="loader">
-            <div className="box box0">
-              <div></div>
-            </div>
-            <div className="box box1">
-              <div></div>
-            </div>
-            <div className="box box2">
-              <div></div>
-            </div>
-            <div className="box box3">
-              <div></div>
-            </div>
-            <div className="box box4">
-              <div></div>
-            </div>
-            <div className="box box5">
-              <div></div>
-            </div>
-            <div className="box box6">
-              <div></div>
-            </div>
-            <div className="box box7">
-              <div></div>
-            </div>
-            <div className="ground">
-              <div></div>
-            </div>
-          </div>
-          <Button 
-            variant="subtle" 
-            color="gray"
-            style={{ position: 'absolute', bottom: 20, right: 20 }}
-            onClick={handleSplashEnd}
-          >
-            Omitir
-          </Button>
-        </Box>
-      ) : (
-      <Center h="100vh">
-        <Paper shadow="xl" p={40} radius="sm" w={400}>
-          <Stack align="center" gap="lg">
+      <Center h="100vh" w="100%">
+        <Paper shadow="xl" p={50} radius="lg" w={450} withBorder={false}>
+          <Stack align="center" gap="xl">
             <Box style={{ textAlign: 'center' }}>
-              <img src={LogoApp} alt="SOF-IA" style={{ height: 60, objectFit: 'contain', marginBottom: 8, borderRadius: 8 }} />
-              <Text size="sm" c="dimmed">
-                Inicie sesión para continuar
+              <img src={LogoApp} alt="SOF-IA" style={{ height: 80, objectFit: 'contain', marginBottom: 12, borderRadius: 12 }} />
+              <Title order={2} fw={900} style={{ letterSpacing: '-0.5px' }} mb={4}>¡Bienvenido!</Title>
+              <Text size="sm" c="dimmed" fw={500}>
+                Gestión inteligente para tu negocio
               </Text>
             </Box>
 
+            <Divider w="100%" label="Identificación" labelPosition="center" />
+
             <Select
-              label="Usuario"
-              placeholder="Seleccione su usuario"
+              label="Usuario de Sistema"
+              placeholder="¿Quién está operando?"
               data={users}
               value={selectedUser}
               onChange={setSelectedUser}
               w="100%"
+              size="md"
               searchable
             />
 
             {selectedUser && (
-              <Stack align="center" gap="xs">
-                <Text size="sm" fw={500}>
-                  <IconLock size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                  Ingrese su PIN
+              <Stack align="center" gap="md">
+                <Text size="sm" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '1px' }}>
+                  <IconLock size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                  Seguridad PIN
                 </Text>
                 <PinInput
                   length={4}
                   type="number"
                   mask
-                  size="lg"
+                  size="xl"
                   value={pin}
                   onChange={setPin}
                   onComplete={handlePinComplete}
@@ -163,25 +118,28 @@ export default function LoginPage({ onLogin }: LoginPageProps): JSX.Element {
             )}
 
             {error && (
-              <Alert icon={<IconAlertCircle size={16} />} color="red" w="100%">
+              <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" w="100%" radius="md">
                 {error}
               </Alert>
             )}
 
             <Button
               fullWidth
-              size="md"
+              size="lg"
+              radius="md"
               loading={loading}
               disabled={!selectedUser || pin.length !== 4}
               onClick={handleLogin}
               color="sap"
+              style={{ boxShadow: '0 8px 15px rgba(33, 150, 243, 0.3)' }}
             >
-              Ingresar
+              Iniciar Jornada
             </Button>
+            
+            <Text size="xs" c="dimmed">SOF-IA v1.0 — 2026</Text>
           </Stack>
         </Paper>
       </Center>
-      )}
     </Box>
   )
 }

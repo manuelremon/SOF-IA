@@ -1,6 +1,6 @@
 import { app, dialog, BrowserWindow } from 'electron'
 import { join } from 'path'
-import { copyFileSync, existsSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'fs'
 
 function getDbPath(): string {
   return join(app.getPath('userData'), 'db', 'sofia.db')
@@ -56,4 +56,45 @@ export async function restoreBackup(): Promise<{ success: boolean; error?: strin
   } catch (err: any) {
     return { success: false, error: err.message }
   }
+}
+
+let autoBackupIntervalId: ReturnType<typeof setInterval> | null = null
+
+export function startAutoBackupTimer(intervalHours: number): void {
+  if (autoBackupIntervalId) {
+    clearInterval(autoBackupIntervalId)
+    autoBackupIntervalId = null
+  }
+  
+  if (intervalHours <= 0) return
+
+  const ms = intervalHours * 60 * 60 * 1000
+  autoBackupIntervalId = setInterval(() => {
+    try {
+      const dbPath = getDbPath()
+      if (!existsSync(dbPath)) return
+      
+      const backupsDir = join(app.getPath('userData'), 'backups')
+      if (!existsSync(backupsDir)) {
+        mkdirSync(backupsDir, { recursive: true })
+      }
+      
+      const filename = `sofia-autobackup-${new Date().toISOString().replace(/[:.]/g, '-')}.db`
+      const destPath = join(backupsDir, filename)
+      copyFileSync(dbPath, destPath)
+      
+      const files = readdirSync(backupsDir).filter(f => f.startsWith('sofia-autobackup-') && f.endsWith('.db'))
+      if (files.length > 24) {
+        files.sort((a, b) => {
+          return statSync(join(backupsDir, a)).mtimeMs - statSync(join(backupsDir, b)).mtimeMs;
+        })
+        const toDelete = files.slice(0, files.length - 24)
+        for (const file of toDelete) {
+          unlinkSync(join(backupsDir, file))
+        }
+      }
+    } catch (error) {
+      console.error('Auto backup failed:', error)
+    }
+  }, ms)
 }

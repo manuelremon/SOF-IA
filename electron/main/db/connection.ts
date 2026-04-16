@@ -53,7 +53,12 @@ function seedDefaults(sqliteDb: Database.Database): void {
       ['business_tax_id', ''],
       ['tax_rate', '21'],
       ['currency', 'ARS'],
-      ['receipt_footer', 'Gracias por su compra']
+      ['receipt_footer', 'Gracias por su compra'],
+      ['afip_cuit', ''],
+      ['afip_pto_vta', '1'],
+      ['afip_env', 'test'], // 'test' (homologacion) o 'prod' (produccion)
+      ['afip_cert_path', ''],
+      ['afip_key_path', '']
     ]
     const stmt = sqliteDb.prepare(
       'INSERT INTO app_settings (key, value) VALUES (?, ?)'

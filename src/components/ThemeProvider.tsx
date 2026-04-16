@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { MantineProvider, createTheme, mergeMantineTheme } from '@mantine/core'
+import { MantineProvider, createTheme } from '@mantine/core'
 import { sapTheme } from '../theme/sapTheme'
 import { useSettingsStore } from '../stores/settingsStore'
 
@@ -58,17 +58,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const scaleRef = parseInt(settings?.font_size_scale || '0', 10)
     const baseMultiplier = 1 + (scaleRef * 0.1)
 
-    const themeOverrides = createTheme({
+    const themeObj = createTheme({
+      ...sapTheme,
       primaryColor: primaryColor === 'customGreen' ? 'green' : primaryColor,
       fontFamily: fontFamilyString,
-      headings: { fontFamily: fontFamilyString },
+      headings: { 
+        ...(sapTheme.headings || {}),
+        fontFamily: fontFamilyString 
+      },
       scale: baseMultiplier,
       colors: {
-        dark: customDark as any
+        ...(sapTheme.colors || {}),
+        dark: (customDark && customDark.length === 10) ? (customDark as any) : ((sapTheme.colors as any)?.dark || [
+          '#C1C2C5', '#A6A7AB', '#909296', '#5C5F66', '#2C3642', '#212936', '#171F2B', '#0D131F', '#080C14', '#030509'
+        ])
       }
     })
-
-    const themeObj = mergeMantineTheme(sapTheme as any, themeOverrides)
 
     return {
       themeObj,

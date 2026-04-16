@@ -26,47 +26,54 @@ export default function UsuariosPage(): JSX.Element {
   useEffect(() => { load() }, [])
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <Title order={3}>Usuarios</Title>
+    <Stack gap="xl">
+      <Group justify="space-between" align="flex-end">
+        <div>
+          <Title order={2} fw={800}>Gestión de Personal</Title>
+          <Text size="sm" c="dimmed">Administración de usuarios, roles y accesos de seguridad</Text>
+        </div>
         <Button leftSection={<IconPlus size={16} />} color="sap" onClick={() => { setSelected(null); formHandlers.open() }}>
-          Nuevo usuario
+          Nuevo Usuario
         </Button>
       </Group>
 
-      <Paper withBorder>
-        <Table>
+      <Paper withBorder={false} bg="transparent" p={0}>
+        <Table striped highlightOnHover verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Nombre</Table.Th>
-              <Table.Th>Rol</Table.Th>
-              <Table.Th>Estado</Table.Th>
-              <Table.Th>Creado</Table.Th>
+              <Table.Th>Nombre de Usuario</Table.Th>
+              <Table.Th>Rol de Sistema</Table.Th>
+              <Table.Th ta="center">Estado</Table.Th>
+              <Table.Th>Fecha de Alta</Table.Th>
               <Table.Th w={50} />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {users.map((u) => (
               <Table.Tr key={u.id}>
-                <Table.Td>{u.name}</Table.Td>
-                <Table.Td>{ROLE_LABELS[u.role] || u.role}</Table.Td>
+                <Table.Td><Text fw={700} size="sm">{u.name}</Text></Table.Td>
                 <Table.Td>
-                  <Badge color={u.isActive ? 'green' : 'gray'} variant="light">
-                    {u.isActive ? 'Activo' : 'Inactivo'}
+                  <Badge variant="light" color={u.role === 'admin' ? 'sap' : 'gray'} radius="sm">
+                    {ROLE_LABELS[u.role] || u.role}
                   </Badge>
                 </Table.Td>
-                <Table.Td>{u.createdAt?.slice(0, 10)}</Table.Td>
-                <Table.Td>
-                  <Menu>
+                <Table.Td ta="center">
+                  <Badge color={u.isActive ? 'green' : 'gray'} variant="filled" size="sm">
+                    {u.isActive ? 'ACTIVO' : 'INACTIVO'}
+                  </Badge>
+                </Table.Td>
+                <Table.Td><Text size="sm">{u.createdAt?.slice(0, 10)}</Text></Table.Td>
+                <Table.Td ta="right">
+                  <Menu position="bottom-end" shadow="md">
                     <Menu.Target>
-                      <ActionIcon variant="subtle"><IconDots size={16} /></ActionIcon>
+                      <ActionIcon variant="subtle" color="gray"><IconDots size={18} /></ActionIcon>
                     </Menu.Target>
                     <Menu.Dropdown>
                       <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => { setSelected(u); formHandlers.open() }}>
-                        Editar
+                        Editar perfil
                       </Menu.Item>
                       <Menu.Item leftSection={<IconKey size={14} />} onClick={() => { setPinUser(u); pinHandlers.open() }}>
-                        Cambiar PIN
+                        Modificar PIN
                       </Menu.Item>
                     </Menu.Dropdown>
                   </Menu>

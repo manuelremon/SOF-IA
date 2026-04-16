@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   AppShell as MantineAppShell,
@@ -10,6 +10,7 @@ import {
   Tooltip,
   Divider,
   Box,
+  ActionIcon,
   useMantineTheme,
   useMantineColorScheme
 } from '@mantine/core'
@@ -30,8 +31,6 @@ import {
   IconChevronRight
 } from '@tabler/icons-react'
 import { useAuthStore } from '../stores/authStore'
-import { useSettingsStore } from '../stores/settingsStore'
-import LogoApp from '../../resources/assets/LogoSof-IA.png'
 import AIChatDrawer from './AIChatDrawer'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -120,53 +119,56 @@ export default function AppShell(): JSX.Element {
 
   const isDark = colorScheme === 'dark'
   const primaryVariant = theme.colors[theme.primaryColor] || theme.colors.sap
-  const navBg = isDark ? theme.colors.dark[8] : (theme.primaryColor === 'sap' ? '#0056D6' : primaryVariant[9])
-  const mainBg = isDark ? theme.colors.dark[7] : '#f1f3f5'
+  const navBg = isDark ? theme.colors.dark[8] : '#0056D6'
+  const mainBg = isDark ? theme.colors.dark[7] : '#F8F9FA'
 
   return (
     <MantineAppShell
-      navbar={{ width: collapsed ? 70 : 220, breakpoint: 0 }}
-      padding="md"
+      navbar={{ width: collapsed ? 70 : 240, breakpoint: 0 }}
+      padding="lg"
       styles={{
-        main: { backgroundColor: mainBg },
+        main: { backgroundColor: mainBg, transition: 'padding 200ms ease' },
         navbar: {
           backgroundColor: navBg,
           borderRight: 'none',
-          transition: 'width 200ms ease'
+          transition: 'width 200ms ease',
+          boxShadow: '4px 0 10px rgba(0,0,0,0.05)'
         }
       }}
     >
       <MantineAppShell.Navbar p={0}>
-        <Stack justify="space-between" h="100%">
+        <Stack justify="space-between" h="100%" gap={0}>
           {/* Header */}
           <div>
             <Group
               justify={collapsed ? 'center' : 'space-between'}
               px={collapsed ? 0 : 'md'}
-              py="sm"
+              py="md"
               wrap="nowrap"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
             >
               {!collapsed && (
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-                  <img src={LogoApp} alt={businessName} style={{ maxHeight: 42, maxWidth: '100%', objectFit: 'contain' }} />
-                </div>
+                <Text fw={800} c="white" size="lg" style={{ letterSpacing: '1px' }}>
+                  {businessName.split(' ')[0]}
+                </Text>
               )}
               <UnstyledButton onClick={() => setCollapsed((v) => !v)} p={4}>
                 {collapsed
-                  ? <IconChevronRight size={16} color="#adb5bd" />
-                  : <IconChevronLeft size={16} color="#adb5bd" />
+                  ? <IconChevronRight size={18} color="rgba(255,255,255,0.5)" />
+                  : <IconChevronLeft size={18} color="rgba(255,255,255,0.5)" />
                 }
               </UnstyledButton>
             </Group>
 
             {/* Nav items */}
-            <Stack gap={2} px={6} py="xs">
+            <Stack gap={4} px={10} py="md">
               {visibleItems.map((item) => {
                 const active = location.pathname === item.path
                 const showBadge = item.path === '/dashboard' && lowStockCount > 0
                 const separator = item.separator ? (
-                  <Divider key={`sep-${item.path}`} color="rgba(255,255,255,0.08)" my={4} />
+                  <Box key={`sep-${item.path}`} py={8}>
+                    <Divider color="rgba(255,255,255,0.08)" />
+                  </Box>
                 ) : null
 
                 const button = (
@@ -174,37 +176,28 @@ export default function AppShell(): JSX.Element {
                     key={item.path}
                     onClick={() => navigate(item.path)}
                     px={collapsed ? 0 : 12}
-                    py={8}
+                    py={10}
                     style={{
-                      borderRadius: 6,
-                      backgroundColor: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      borderRadius: theme.radius.md,
+                      backgroundColor: active ? 'rgba(255,255,255,0.15)' : 'transparent',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: collapsed ? 'center' : 'flex-start',
-                      gap: 10,
-                      transition: 'background-color 150ms ease',
-                      width: '100%'
-                    }}
-                    styles={{
-                      root: {
-                        '&:hover': {
-                          backgroundColor: active
-                            ? 'rgba(255,255,255,0.12)'
-                            : 'rgba(255,255,255,0.06)'
-                        }
-                      }
+                      gap: 12,
+                      transition: 'all 150ms ease',
+                      width: '100%',
+                      color: active ? '#ffffff' : 'rgba(255,255,255,0.7)'
                     }}
                   >
                     <item.icon
-                      size={20}
-                      color={active ? '#ffffff' : '#adb5bd'}
+                      size={22}
+                      stroke={active ? 2.5 : 1.5}
                       style={{ flexShrink: 0 }}
                     />
                     {!collapsed && (
                       <Text
                         size="sm"
-                        c={active ? 'white' : 'gray.4'}
-                        fw={active ? 600 : 400}
+                        fw={active ? 700 : 500}
                         truncate
                         style={{ flex: 1 }}
                       >
@@ -220,7 +213,7 @@ export default function AppShell(): JSX.Element {
                 )
 
                 const element = collapsed ? (
-                  <Tooltip key={item.path} label={item.label} position="right" withArrow>
+                  <Tooltip key={item.path} label={item.label} position="right" withArrow offset={15}>
                     <div style={{ position: 'relative' }}>
                       {button}
                       {showBadge && (
@@ -235,125 +228,83 @@ export default function AppShell(): JSX.Element {
                   </Tooltip>
                 ) : button
 
-                return <>{separator}{element}</>
+                return <Fragment key={item.path}>{separator}{element}</Fragment>
               })}
             </Stack>
           </div>
 
           {/* Footer */}
           <div>
-            <Divider color="rgba(255,255,255,0.1)" />
-            <Box px={collapsed ? 6 : 'md'} py="sm">
-
+            <Box px={10} py="md" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
               {!collapsed && (
-                <Group justify="center" gap={6} mb={8}>
-                  <Text size="xs" c="gray.4" fw={500} truncate>
-                    {user?.name}
-                  </Text>
-                  <Badge size="xs" variant="light" color="gray">
-                    {ROLE_LABELS[user?.role ?? ''] || user?.role}
-                  </Badge>
+                <Group justify="space-between" gap={6} mb={12} px={8}>
+                  <Stack gap={0}>
+                    <Text size="sm" c="white" fw={700} truncate>
+                      {user?.name}
+                    </Text>
+                    <Text size="xs" c="rgba(255,255,255,0.5)" fw={500}>
+                      {ROLE_LABELS[user?.role ?? ''] || user?.role}
+                    </Text>
+                  </Stack>
+                  <ActionIcon variant="subtle" color="gray.4" onClick={handleLogout}>
+                    <IconLogout size={18} />
+                  </ActionIcon>
                 </Group>
               )}
-              {isAdmin && (
-                <Tooltip label="Configuración" position="right" disabled={!collapsed}>
-                  <UnstyledButton
-                    onClick={() => navigate('/configuracion')}
-                    px={collapsed ? 0 : 12}
-                    py={6}
-                    mb={4}
-                    style={{
-                      borderRadius: 6,
-                      backgroundColor: location.pathname.startsWith('/configuracion') ? 'rgba(255,255,255,0.12)' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: collapsed ? 'center' : 'flex-start',
-                      gap: 10,
-                      width: '100%',
-                      transition: 'background-color 150ms ease'
-                    }}
-                    styles={{
-                      root: {
-                        '&:hover': { backgroundColor: location.pathname.startsWith('/configuracion') ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)' }
-                      }
-                    }}
-                  >
-                    <IconSettings size={18} color={location.pathname.startsWith('/configuracion') ? '#ffffff' : '#adb5bd'} />
-                    {!collapsed && (
-                      <Text size="sm" c={location.pathname.startsWith('/configuracion') ? 'white' : 'gray.4'} fw={location.pathname.startsWith('/configuracion') ? 600 : 400}>
-                        Configuración
-                      </Text>
-                    )}
-                  </UnstyledButton>
-                </Tooltip>
-              )}
-              </Box>
+              
+              <Stack gap={4}>
+                {isAdmin && (
+                  <Tooltip label="Configuración" position="right" disabled={!collapsed} offset={15}>
+                    <UnstyledButton
+                      onClick={() => navigate('/configuracion')}
+                      px={collapsed ? 0 : 12}
+                      py={8}
+                      style={{
+                        borderRadius: theme.radius.md,
+                        backgroundColor: location.pathname.startsWith('/configuracion') ? 'rgba(255,255,255,0.15)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: collapsed ? 'center' : 'flex-start',
+                        gap: 12,
+                        width: '100%',
+                        transition: 'all 150ms ease',
+                        color: location.pathname.startsWith('/configuracion') ? 'white' : 'rgba(255,255,255,0.7)'
+                      }}
+                    >
+                      <IconSettings size={20} stroke={location.pathname.startsWith('/configuracion') ? 2.5 : 1.5} />
+                      {!collapsed && <Text size="sm" fw={location.pathname.startsWith('/configuracion') ? 700 : 500}>Configuración</Text>}
+                    </UnstyledButton>
+                  </Tooltip>
+                )}
 
-              <Box p="md" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                {/* Asistente y WhatsApp */}
-                <Box pb="md">
-                  <AIChatDrawer collapsed={collapsed} />
-                </Box>
-
-                <Tooltip label="Ayuda" position="right" disabled={!collapsed}>
+                <Tooltip label="Ayuda" position="right" disabled={!collapsed} offset={15}>
                   <UnstyledButton
                     onClick={() => navigate('/ayuda')}
                     px={collapsed ? 0 : 12}
-                    py={6}
-                    mb={4}
+                    py={8}
                     style={{
-                      borderRadius: 6,
-                      backgroundColor: location.pathname.startsWith('/ayuda') ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      borderRadius: theme.radius.md,
+                      backgroundColor: location.pathname.startsWith('/ayuda') ? 'rgba(255,255,255,0.15)' : 'transparent',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: collapsed ? 'center' : 'flex-start',
-                      gap: 10,
+                      gap: 12,
                       width: '100%',
-                      transition: 'background-color 150ms ease'
-                    }}
-                    styles={{
-                      root: {
-                        '&:hover': { backgroundColor: location.pathname.startsWith('/ayuda') ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)' }
-                      }
+                      transition: 'all 150ms ease',
+                      color: location.pathname.startsWith('/ayuda') ? 'white' : 'rgba(255,255,255,0.7)'
                     }}
                   >
-                    <IconHelpCircle size={18} color={location.pathname.startsWith('/ayuda') ? '#ffffff' : '#adb5bd'} />
-                    {!collapsed && (
-                      <Text size="sm" c={location.pathname.startsWith('/ayuda') ? 'white' : 'gray.4'} fw={location.pathname.startsWith('/ayuda') ? 600 : 400}>
-                        Ayuda
-                      </Text>
-                    )}
+                    <IconHelpCircle size={20} stroke={location.pathname.startsWith('/ayuda') ? 2.5 : 1.5} />
+                    {!collapsed && <Text size="sm" fw={location.pathname.startsWith('/ayuda') ? 700 : 500}>Ayuda</Text>}
                   </UnstyledButton>
                 </Tooltip>
+              </Stack>
 
-                <Tooltip label="Cerrar sesión" position="right" disabled={!collapsed}>
-                  <UnstyledButton
-                    onClick={handleLogout}
-                    px={collapsed ? 0 : 12}
-                    py={6}
-                    style={{
-                      borderRadius: 6,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: collapsed ? 'center' : 'flex-start',
-                      gap: 10,
-                      width: '100%',
-                      backgroundColor: 'transparent'
-                    }}
-                    styles={{
-                      root: {
-                        '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' }
-                      }
-                    }}
-                  >
-                    <IconLogout size={18} color="#fa5252" />
-                    {!collapsed && (
-                      <Text size="sm" c="red.4">Cerrar sesión</Text>
-                    )}
-                  </UnstyledButton>
-                </Tooltip>
+              <Box mt="md" pt="md" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <AIChatDrawer collapsed={collapsed} />
               </Box>
-            </div>
+            </Box>
+          </div>
         </Stack>
       </MantineAppShell.Navbar>
 

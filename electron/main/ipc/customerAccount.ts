@@ -7,6 +7,11 @@ export function registerCustomerAccountHandlers(): void {
     catch (err: any) { return { ok: false, error: err.message } }
   })
 
+  ipcMain.handle('customerAccount:getBalance', async (_e, customerId: number) => {
+    try { return { ok: true, data: accountService.getBalance(customerId) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+
   ipcMain.handle('customerAccount:charge', async (_e, data: any) => {
     try { return { ok: true, data: accountService.chargeToAccount(data) } }
     catch (err: any) { return { ok: false, error: err.message } }

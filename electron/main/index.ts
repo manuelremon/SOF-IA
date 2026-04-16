@@ -3,6 +3,10 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb } from './db/connection'
 import { registerAllHandlers } from './ipc'
+import { getSetting } from './services/settingsService'
+import { startAutoBackupTimer } from './services/backupService'
+import { startExpressServer } from './server/expressApp'
+import { startSyncTimer } from './services/syncService'
 
 // FORZAR RENDERIZADO NÍTIDO EN CHROMIUM (WINDOWS)
 app.commandLine.appendSwitch('disable-font-subpixel-positioning')
@@ -68,6 +72,16 @@ app.whenReady().then(() => {
   })
 
   initDb()
+  
+  const intervalHours = Number(getSetting('auto_backup_interval_hours')) || 3
+  startAutoBackupTimer(intervalHours)
+
+  // Iniciar sincronización en la nube
+  startSyncTimer()
+
+  // Iniciar servidor Rompefilas (Mobile POS)
+  startExpressServer(3001)
+
   registerAllHandlers()
   buildAppMenu()
   createWindow()

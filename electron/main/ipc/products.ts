@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import * as productService from '../services/productService'
+import * as productLookupService from '../services/productLookupService'
 
 export function registerProductHandlers(): void {
   // Categories
@@ -59,6 +60,14 @@ export function registerProductHandlers(): void {
   })
   ipcMain.handle('products:bulkPriceApply', async (_e, updates) => {
     try { return { ok: true, data: productService.bulkPriceApply(updates) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+  ipcMain.handle('products:lookup', async (_e, barcode: string) => {
+    try { return { ok: true, data: await productLookupService.lookupProductByBarcode(barcode) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+  ipcMain.handle('products:identifyByImage', async (_e, base64Image: string) => {
+    try { return { ok: true, data: await productLookupService.identifyProductByImage(base64Image) } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
 }
