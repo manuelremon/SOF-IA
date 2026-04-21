@@ -19,7 +19,9 @@ import { useAuthStore, type AuthUser } from './stores/authStore'
 function App(): JSX.Element {
   const { user, isAuthenticated, login } = useAuthStore()
 
-  const handleLogin = (authUser: AuthUser): void => {
+  const handleLogin = (authUser: AuthUser, businessId: number): void => {
+    // Aquí podríamos guardar el businessId en un store global
+    window.api.settings.set('current_business_id', String(businessId))
     login(authUser)
   }
 

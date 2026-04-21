@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Title, Stack, Paper, TextInput, NumberInput, Button, Group, Divider, Text, Tabs, Select, Switch, Tooltip, Collapse, Alert, rem } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconDeviceFloppy, IconDatabaseExport, IconDatabaseImport, IconFileSpreadsheet, IconSettings, IconUsers, IconPalette, IconVolume, IconBuildingBank, IconBrandWhatsapp, IconRobot, IconBrain, IconEye, IconEyeOff, IconCloud, IconRefresh } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconDatabaseExport, IconDatabaseImport, IconFileSpreadsheet, IconSettings, IconUsers, IconPalette, IconVolume, IconBuildingBank, IconBrandWhatsapp, IconRobot, IconBrain, IconEye, IconEyeOff, IconCloud, IconRefresh, IconFileInvoice } from '@tabler/icons-react'
 import type { AppSettings } from '../types'
 import UsuariosPage from './UsuariosPage'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -99,7 +99,6 @@ export default function ConfiguracionPage(): JSX.Element {
     <Stack gap="xl">
       <div>
         <Title order={2} fw={800}>Configuración</Title>
-        <Text size="sm" c="dimmed">Preferencias del sistema, integraciones y personalización</Text>
       </div>
 
       <Tabs defaultValue="general" variant="pills" radius="md">
@@ -226,31 +225,7 @@ export default function ConfiguracionPage(): JSX.Element {
               </Stack>
             </Paper>
 
-            <Paper p="lg">
-              <Title order={4} mb="md">Personalización Visual</Title>
-              <Group grow align="flex-start">
-                <Select
-                  label="Tipografía del Sistema"
-                  data={[
-                    { value: 'inter', label: 'Inter (Moderna)' },
-                    { value: 'roboto', label: 'Roboto (Clásica)' },
-                    { value: 'montserrat', label: 'Montserrat (Elegante)' },
-                    { value: 'outfit', label: 'Outfit (SaaS Look)' }
-                  ]}
-                  value={settings.font_family || 'inter'}
-                  onChange={(v) => update('font_family', v || 'inter')}
-                />
-                <Stack gap={4}>
-                  <Text size="sm" fw={500}>Interfaz de Usuario</Text>
-                  <Switch
-                    label="Modo Oscuro"
-                    size="md"
-                    checked={settings.color_scheme === 'dark'}
-                    onChange={(e) => update('color_scheme', e.currentTarget.checked ? 'dark' : 'light')}
-                  />
-                </Stack>
-              </Group>
-            </Paper>
+
 
             <Group justify="flex-end">
               <Button

@@ -40,6 +40,25 @@ function seedDefaults(sqliteDb: Database.Database): void {
       .run('Administrador', hashPin('1234'), 'admin', 1)
   }
 
+  // Seed a default business if none exist
+  const businessCount = sqliteDb
+    .prepare('SELECT COUNT(*) as cnt FROM businesses')
+    .get() as { cnt: number }
+
+  if (businessCount.cnt === 0) {
+    const res = sqliteDb
+      .prepare(`INSERT INTO businesses (name, industry) VALUES (?, ?)`)
+      .run('Local Principal', 'comercio')
+    
+    const bizId = res.lastInsertRowid
+    
+    // Link admin user to this business
+    const adminUser = sqliteDb.prepare("SELECT id FROM users WHERE role = 'admin'").get() as { id: number } | undefined
+    if (adminUser) {
+      sqliteDb.prepare('INSERT INTO user_businesses (user_id, business_id) VALUES (?, ?)').run(adminUser.id, bizId)
+    }
+  }
+
   // Seed default settings if empty
   const settingsCount = sqliteDb
     .prepare('SELECT COUNT(*) as cnt FROM app_settings')

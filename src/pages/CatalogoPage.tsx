@@ -133,7 +133,6 @@ export default function CatalogoPage(): JSX.Element {
           <Group justify="space-between" align="flex-end">
             <div>
               <Title order={2} fw={800}>Catálogo de Productos</Title>
-              <Text size="sm" c="dimmed">Administración de artículos, categorías y precios</Text>
             </div>
             <Group gap="sm">
               <Button variant="light" color="blue" leftSection={<IconCurrencyDollar size={16} />} onClick={bulkHandlers.open}>

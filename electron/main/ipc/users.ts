@@ -30,4 +30,12 @@ export function registerUserHandlers(): void {
     try { return { ok: true, data: userService.changePin(data) } }
     catch (err: any) { return { ok: false, error: err.message } }
   })
+  ipcMain.handle('businesses:listByUser', async (_e, userId, role) => {
+    try { return { ok: true, data: userService.listBusinessesByUser(userId, role) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
+  ipcMain.handle('businesses:create', async (_e, data) => {
+    try { return { ok: true, data: userService.createBusiness(data) } }
+    catch (err: any) { return { ok: false, error: err.message } }
+  })
 }

@@ -246,7 +246,7 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
           header: { padding: '16px 20px', borderBottom: '1px solid #f1f3f5', marginBottom: 0 } 
         }}
       >
-        <Group justify="flex-end" px="md" py="xs" bg="gray.0" style={{ borderBottom: '1px solid #f1f3f5' }}>
+        <Group justify="flex-end" px="md" py="xs" style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
            <Tooltip label={autoSpeak ? "Voz Activada" : "Voz Desactivada"}>
               <ActionIcon variant="light" radius="xl" color={autoSpeak ? 'blue' : 'gray'} onClick={() => setAutoSpeak(!autoSpeak)}>
                  {autoSpeak ? <IconVolume size={18} /> : <IconVolumeOff size={18} />}
@@ -254,7 +254,7 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
            </Tooltip>
         </Group>
 
-        <ScrollArea flex={1} p="xl" viewportRef={scrollRef} bg="#F8F9FA">
+        <ScrollArea flex={1} p="xl" viewportRef={scrollRef}>
           <Stack gap="lg">
             {messages.map((m) => (
               <Group key={m.id} align="flex-start" wrap="nowrap" justify={m.role === 'user' ? 'flex-end' : 'flex-start'} gap="xs">
@@ -262,12 +262,10 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
                 <Paper
                   p="md"
                   shadow="sm"
-                  bg={m.role === 'user' ? 'sap.6' : 'white'}
-                  c={m.role === 'user' ? 'white' : 'dark'}
                   style={{ 
                     maxWidth: '85%',
                     borderRadius: m.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    border: m.role === 'model' ? '1px solid #e9ecef' : 'none'
+                    border: '1px solid var(--mantine-color-default-border)'
                   }}
                 >
                   <Text size="sm" fw={500} style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{m.content}</Text>
@@ -278,7 +276,7 @@ export default function AIChatDrawer({ collapsed }: { collapsed?: boolean }): JS
             {loading && (
               <Group align="flex-start" wrap="nowrap" gap="xs">
                 <BotAvatar />
-                <Paper p="md" shadow="sm" bg="white" style={{ borderRadius: '16px 16px 16px 4px', border: '1px solid #e9ecef' }}>
+                <Paper p="md" shadow="sm" style={{ borderRadius: '16px 16px 16px 4px', border: '1px solid var(--mantine-color-default-border)' }}>
                   <Loader size="xs" color="gray" type="dots" />
                 </Paper>
               </Group>

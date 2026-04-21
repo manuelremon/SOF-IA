@@ -148,9 +148,11 @@ export default function AppShell(): JSX.Element {
               style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
             >
               {!collapsed && (
-                <Text fw={800} c="white" size="lg" style={{ letterSpacing: '1px' }}>
-                  {businessName.split(' ')[0]}
-                </Text>
+                <UnstyledButton onClick={() => setCollapsed(true)} style={{ flex: 1 }}>
+                  <Text fw={800} c="white" size="lg" style={{ letterSpacing: '1px' }}>
+                    {businessName.split(' ')[0]}
+                  </Text>
+                </UnstyledButton>
               )}
               <UnstyledButton onClick={() => setCollapsed((v) => !v)} p={4}>
                 {collapsed

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Title, Stack, Table, Paper, Text, Badge, Group, Button, Tabs,
-  Modal, Select, NumberInput, ActionIcon, Textarea, TextInput, Box
+  Modal, Select, NumberInput, ActionIcon, Textarea, Box
 } from '@mantine/core'
 import {
   IconTruckDelivery, IconPlus, IconTrash, IconHistory, IconPackage, IconCheck
@@ -10,7 +10,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { useAuthStore } from '../stores/authStore'
 import ReceiveGoodsModal from '../components/compras/ReceiveGoodsModal'
-import type { GoodsReceipt, PurchaseOrder, Supplier, Product } from '../types'
+import type { Supplier, Product } from '../types'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n)
@@ -84,7 +84,7 @@ export default function RecepcionesPage(): JSX.Element {
   const handleFreeReceive = async () => {
     if (!freeSupplierId || freeItems.length === 0) return
     setFreeLoading(true)
-    const res = await window.api.goodsReceipts.receiveDirect({
+    const res = await window.api.goodsReceipts.receiveWithoutPO({
       supplierId: Number(freeSupplierId),
       userId: user?.id,
       notes: freeNotes || undefined,
@@ -124,14 +124,13 @@ export default function RecepcionesPage(): JSX.Element {
           <Group justify="space-between" align="flex-end">
             <div>
               <Title order={2} fw={800}>Recepciones</Title>
-              <Text size="sm" c="dimmed">Ingreso de mercadería y control de entregas de proveedores</Text>
             </div>
             <Button color="teal" leftSection={<IconPlus size={16} />} onClick={openFreeReceive}>
               Recepción Directa
             </Button>
           </Group>
 
-          <Tabs value={activeTab} onChange={setActiveTab} variant="pills" size="sm" radius="md">
+          <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="md">
             <Tabs.List>
               <Tabs.Tab value="pendientes" leftSection={<IconPackage size={16} />}>
                 Pedidos Pendientes
@@ -239,7 +238,7 @@ export default function RecepcionesPage(): JSX.Element {
         opened={poOpened}
         onClose={poHandlers.close}
         purchaseOrder={selectedPO}
-        onSaved={load}
+        onReceived={load}
       />
 
       {/* Free Receive Modal */}

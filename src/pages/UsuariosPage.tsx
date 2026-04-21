@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Title, Stack, Group, Button, Table, Badge, ActionIcon, Paper, Menu } from '@mantine/core'
+import { Title, Stack, Group, Button, Table, Badge, ActionIcon, Paper, Menu, Text } from '@mantine/core'
 import { IconPlus, IconEdit, IconKey, IconDots } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
 import UserFormModal from '../components/users/UserFormModal'
@@ -30,7 +30,6 @@ export default function UsuariosPage(): JSX.Element {
       <Group justify="space-between" align="flex-end">
         <div>
           <Title order={2} fw={800}>Gestión de Personal</Title>
-          <Text size="sm" c="dimmed">Administración de usuarios, roles y accesos de seguridad</Text>
         </div>
         <Button leftSection={<IconPlus size={16} />} color="sap" onClick={() => { setSelected(null); formHandlers.open() }}>
           Nuevo Usuario

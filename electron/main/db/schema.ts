@@ -20,6 +20,38 @@ export const users = sqliteTable('users', {
 })
 
 /* ------------------------------------------------------------------ */
+/*  Businesses                                                         */
+/* ------------------------------------------------------------------ */
+
+export const businesses = sqliteTable('businesses', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  description: text('description'),
+  industry: text('industry'), // 'comercio', 'gastronomia', etc.
+  logoPath: text('logo_path'),
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
+})
+
+/* ------------------------------------------------------------------ */
+/*  User-Business Relations                                            */
+/* ------------------------------------------------------------------ */
+
+export const userBusinesses = sqliteTable('user_businesses', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  businessId: integer('business_id').notNull().references(() => businesses.id),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now','localtime'))`)
+})
+
+/* ------------------------------------------------------------------ */
 /*  Categories                                                         */
 /* ------------------------------------------------------------------ */
 

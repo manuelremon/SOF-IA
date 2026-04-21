@@ -11,6 +11,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [loadSettings])
 
   useEffect(() => {
+    document.body.setAttribute('data-mantine-color-scheme', 'light')
+  }, [])
+
+  useEffect(() => {
     if (settings?.font_size_scale) {
       const scaleRef = parseInt(settings.font_size_scale, 10)
       const sizePercentage = 100 + (scaleRef * 10)
@@ -22,7 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const currentTheme = settings?.theme || 'sap'
     let primaryColor = 'sap'
     let customDark: string[] = []
-    let forceColorScheme: 'light' | 'dark' = (settings?.color_scheme as 'light' | 'dark') || 'light'
+    let forceColorScheme: 'light' = 'light'
 
     switch (currentTheme) {
       case 'teal':
@@ -85,7 +89,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   if (loading) return null
 
   return (
-    <MantineProvider theme={themeObj} forceColorScheme={forceColorScheme}>
+    <MantineProvider theme={themeObj} forceColorScheme={forceColorScheme} defaultColorScheme="light">
       {children}
     </MantineProvider>
   )

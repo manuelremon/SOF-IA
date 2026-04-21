@@ -325,7 +325,14 @@ export default function CajaPage(): JSX.Element {
               )}
               <Title order={2} style={{ fontWeight: 600 }}>Caja</Title>
               <IconCash size={28} color="#27AE60" stroke={1.5} />
-              <Badge color="green" size="lg" variant="filled" style={{ fontWeight: 800 }}>ABIERTA</Badge>
+              <Group gap={5}>
+                <Badge color="green" size="lg" variant="filled" style={{ fontWeight: 800 }}>ABIERTA</Badge>
+                {snapshot && (
+                   <Badge color="green.7" size="lg" variant="outline" style={{ fontWeight: 900, fontSize: rem(16) }}>
+                     {fmt(snapshot.cashInRegister)}
+                   </Badge>
+                )}
+              </Group>
             </Group>
           </Group>
         </Tabs>
@@ -340,38 +347,37 @@ export default function CajaPage(): JSX.Element {
                 {/* 1. Efectivo en Caja */}
                 {snapshot && (
                   <Paper withBorder p="xl" radius="md" bg="gray.0" shadow="sm">
-                    <Stack gap="lg">
+                    <Stack gap="md">
                       <Group justify="space-between" align="center">
-                        <Stack gap={0}>
-                          <Text size="xs" c="dimmed" tt="uppercase" fw={800} style={{ letterSpacing: '1px' }}>
-                            Efectivo actual en caja
-                          </Text>
-                          <Text fw={900} size={rem(48)} c="green.8" style={{ lineHeight: 1 }}>
-                            {fmt(snapshot.cashInRegister)}
-                          </Text>
-                        </Stack>
+                        <Text size="sm" fw={800} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                          Control de Efectivo
+                        </Text>
                         <Button 
-                          size="md" 
-                          variant="filled" 
+                          size="xs" 
+                          variant="light" 
                           color="blue.7" 
-                          leftSection={<IconArrowsExchange size={20} />} 
+                          leftSection={<IconArrowsExchange size={14} />} 
                           onClick={() => setMovementOpened(true)}
                           radius="md"
                         >
-                          Movimiento
+                          Nuevo Movimiento
                         </Button>
                       </Group>
 
-                      <SimpleGrid cols={2} spacing="md">
-                        <Paper withBorder p="md" radius="md" bg="white">
-                          <Text size="xs" c="dimmed" fw={700} tt="uppercase">Efectivo Ventas</Text>
-                          <Text fw={800} size="xl" c="green.7">+{fmt(snapshot.cashSales)}</Text>
+                      <Stack gap="sm">
+                        <Paper withBorder p="sm" radius="md" bg="var(--mantine-color-gray-0)">
+                          <Group justify="space-between" wrap="nowrap">
+                            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Efectivo Ventas</Text>
+                            <Text fw={800} size="lg" c="green.7">+{fmt(snapshot.cashSales)}</Text>
+                          </Group>
                         </Paper>
-                        <Paper withBorder p="md" radius="md" bg="white">
-                          <Text size="xs" c="dimmed" fw={700} tt="uppercase">Otros Medios</Text>
-                          <Text fw={800} size="xl" c="blue.7">{fmt(snapshot.cardSales + snapshot.transferSales)}</Text>
+                        <Paper withBorder p="sm" radius="md" bg="var(--mantine-color-gray-0)">
+                          <Group justify="space-between" wrap="nowrap">
+                            <Text size="xs" c="dimmed" fw={700} tt="uppercase">Otros Medios</Text>
+                            <Text fw={800} size="lg" c="blue.7">{fmt(snapshot.cardSales + snapshot.transferSales)}</Text>
+                          </Group>
                         </Paper>
-                      </SimpleGrid>
+                      </Stack>
 
                       <Paper withBorder p="md" bg="white" radius="md" shadow="xs">
                         <Group justify="space-between" mb="sm">
@@ -496,7 +502,7 @@ export default function CajaPage(): JSX.Element {
                                 } as any)}
                                 style={{ height: 'auto', alignSelf: 'stretch' }}
                               >
-                                APLICAR
+                                AGREGAR
                               </Button>
                             </Group>
                           </Paper>
@@ -518,7 +524,7 @@ export default function CajaPage(): JSX.Element {
               <Stack gap="xl">
                 {/* 3. Carrito (Sticky) */}
                 <Box style={{ position: 'sticky', top: 80, zIndex: 10 }}>
-                  <Cart onPay={() => setPaymentOpened(true)} />
+                  <Cart onPay={() => setPaymentOpened(true)} onCameraOpen={() => setCameraOpened(true)} />
                 </Box>
 
                 {/* 4. Stock y Búsqueda */}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Badge, Select,
-  Modal, Text, Loader, Tooltip, Box, rem
+  Modal, Text, Loader, Tooltip, Box, Alert
 } from '@mantine/core'
 import { IconPlus, IconSearch, IconEye, IconEdit, IconRobot } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
@@ -32,8 +32,6 @@ const fmt = (n: number) =>
 
 export default function ComprasPage(): JSX.Element {
   const { user } = useAuthStore()
-  const isAdmin = user?.role === 'admin'
-
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
@@ -74,18 +72,18 @@ export default function ComprasPage(): JSX.Element {
   const openAutopilot = async () => {
     setAutopilotLoading(true)
     autopilotHandlers.open()
-    const res = await window.api.autopilot.getSuggestions()
+    const res = await window.api.autopilot.preview()
     if (res.ok) {
       setAutopilotLoadingResults(res.data)
     }
     setAutopilotLoading(false)
   }
-
+  
   const confirmAutopilot = async () => {
     setAutopilotLoading(true)
-    const res = await window.api.autopilot.createDrafts({ userId: user?.id })
+    const res = await window.api.autopilot.generate(user?.id || null)
     if (res.ok) {
-      notifications.show({ title: 'Órdenes Generadas', message: `Se crearon ${res.data.count} órdenes en borrador`, color: 'green' })
+      notifications.show({ title: 'Órdenes Generadas', message: `Se procesaron las sugerencias`, color: 'green' })
       autopilotHandlers.close()
       load()
     }
@@ -108,7 +106,6 @@ export default function ComprasPage(): JSX.Element {
           <Group justify="space-between" align="flex-end">
             <div>
               <Title order={2} fw={800}>Gestión de Compras</Title>
-              <Text size="sm" c="dimmed">Abastecimiento de stock y órdenes de compra a proveedores</Text>
             </div>
             <Group gap="sm">
               <Button
@@ -208,8 +205,14 @@ export default function ComprasPage(): JSX.Element {
         </Table>
       </Paper>
 
-      <POFormModal opened={formOpened} onClose={formHandlers.close} order={selectedOrder} onSaved={load} />
-      <PODetailModal opened={detailOpened} onClose={detailHandlers.close} orderId={detailId} />
+      <POFormModal opened={formOpened} onClose={formHandlers.close} purchaseOrder={selectedOrder} onSaved={load} />
+      <PODetailModal 
+         opened={detailOpened} 
+         onClose={detailHandlers.close} 
+         purchaseOrderId={detailId} 
+         onChanged={load} 
+         onReceive={() => {}} // Placeholder or actual handler if needed
+      />
 
       <Modal opened={autopilotOpened} onClose={autopilotHandlers.close} title="SOF-IA Autopilot" size="lg">
         {autopilotLoading ? (

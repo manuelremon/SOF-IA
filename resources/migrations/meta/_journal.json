@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1771879984526,
-      "tag": "0000_tiresome_sabretooth",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1771882801636,
-      "tag": "0001_skinny_young_avengers",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1775509360340,
-      "tag": "0002_mushy_mister_fear",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1775521253417,
-      "tag": "0003_material_gamma_corps",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1775522252475,
-      "tag": "0004_many_black_cat",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1775908642196,
-      "tag": "0005_orange_black_panther",
+      "when": 1776508729454,
+      "tag": "0000_complex_bucky",
       "breakpoints": true
     }
   ]

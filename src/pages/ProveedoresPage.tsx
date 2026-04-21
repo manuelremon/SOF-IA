@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Menu, Text, Modal, Badge, Tooltip, Box } from '@mantine/core'
+import { Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Menu, Text, Modal, Badge, Box } from '@mantine/core'
 import { IconPlus, IconSearch, IconEdit, IconTrash, IconDots, IconAlertTriangle, IconList } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -57,7 +57,6 @@ export default function ProveedoresPage(): JSX.Element {
           <Group justify="space-between" align="flex-end">
             <div>
               <Title order={2} fw={800}>Proveedores</Title>
-              <Text size="sm" c="dimmed">Directorio de abastecimiento y gestión de catálogos</Text>
             </div>
             <Button leftSection={<IconPlus size={16} />} color="sap" onClick={() => { setSelected(null); formHandlers.open() }}>
               Nuevo Proveedor

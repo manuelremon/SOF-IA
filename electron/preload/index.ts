@@ -56,6 +56,11 @@ const api = {
     authenticate: (name: string, pin: string) => ipcRenderer.invoke('users:authenticate', name, pin),
     changePin: (data: any) => ipcRenderer.invoke('users:changePin', data)
   },
+  businesses: {
+    list: () => ipcRenderer.invoke('businesses:list'),
+    listByUser: (userId: number, role: string) => ipcRenderer.invoke('businesses:listByUser', userId, role),
+    create: (data: any) => ipcRenderer.invoke('businesses:create', data)
+  },
   settings: {
     getAll: () => ipcRenderer.invoke('settings:getAll'),
     get: (key: string) => ipcRenderer.invoke('settings:get', key),

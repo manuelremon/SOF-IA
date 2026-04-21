@@ -10,10 +10,11 @@ import {
   ActionIcon,
   Tooltip,
   ScrollArea,
-  Divider
+  Divider,
+  Button
 } from '@mantine/core'
 import { useDebouncedCallback } from '@mantine/hooks'
-import { IconSearch, IconScan, IconBarcode, IconBoxMultiple, IconAlertTriangle } from '@tabler/icons-react'
+import { IconSearch, IconScan, IconBarcode, IconBoxMultiple, IconAlertTriangle, IconPlus } from '@tabler/icons-react'
 import { useSettingsStore } from '../../stores/settingsStore'
 import type { Product } from '../../types'
 
@@ -169,7 +170,7 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
       </Group>
 
       <Paper shadow="xs" withBorder>
-        <Group px="sm" py={6} bg="gray.0" justify="space-between">
+        <Group px="sm" py={6} justify="space-between">
           <Group gap={6}>
             <IconBoxMultiple size={14} color="#868e96" />
             <Text size="xs" c="dimmed" fw={600} tt="uppercase">
@@ -188,27 +189,25 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
             </Text>
           ) : (
             filtered.map((p, i) => (
-              <UnstyledButton
+              <div
                 key={p.id}
-                w="100%"
-                px="sm"
-                py={8}
-                onClick={() => handleSelect(p)}
-                disabled={p.stock <= 0}
                 style={{
+                  width: '100%',
+                  padding: '8px 12px',
                   borderBottom: i < filtered.length - 1 ? '1px solid #f1f3f5' : undefined,
                   opacity: p.stock <= 0 ? 0.5 : 1,
-                  cursor: p.stock <= 0 ? 'not-allowed' : 'pointer',
-                  backgroundColor: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
                   transition: 'background-color 150ms ease',
+                  cursor: p.stock <= 0 ? 'not-allowed' : 'pointer',
                 }}
-                styles={{
-                  root: {
-                    '&:hover': {
-                      backgroundColor: p.stock > 0 ? '#f8f9fa' : undefined,
-                    },
-                  },
+                onMouseEnter={(e) => {
+                  if (p.stock > 0) e.currentTarget.style.backgroundColor = '#f8f9fa'
                 }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+                onClick={() => p.stock > 0 && handleSelect(p)}
               >
                 <Group justify="space-between" wrap="nowrap">
                   <div style={{ minWidth: 0, flex: 1 }}>
@@ -240,12 +239,26 @@ export default function ProductSearch({ onSelect, onCameraOpen }: ProductSearchP
                     >
                       {p.stock} {p.unit}
                     </Badge>
-                    <Text fw={600} size="sm" style={{ whiteSpace: 'nowrap' }}>
+                    <Button 
+                      size="compact-xs" 
+                      variant="light" 
+                      color="blue" 
+                      radius="xl"
+                      leftSection={<IconPlus size={12} />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelect(p);
+                      }}
+                      disabled={p.stock <= 0}
+                    >
+                      Agregar
+                    </Button>
+                    <Text fw={600} size="sm" style={{ whiteSpace: 'nowrap', minWidth: 80, textAlign: 'right' }}>
                       {fmt(p.salePrice)}
                     </Text>
                   </Group>
                 </Group>
-              </UnstyledButton>
+              </div>
             ))
           )}
         </ScrollArea>

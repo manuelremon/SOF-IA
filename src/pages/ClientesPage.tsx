@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import {
   Title, Stack, Group, Button, TextInput, Table, ActionIcon, Paper, Badge,
-  Text, Modal, NumberInput, Textarea, Tabs, SegmentedControl, ScrollArea, Loader, Tooltip, Box, rem
+  Text, Modal, NumberInput, Textarea, SegmentedControl, ScrollArea, Loader, Tooltip, Box, SimpleGrid, Divider
 } from '@mantine/core'
 import {
-  IconPlus, IconSearch, IconEdit, IconCash, IconUsers, IconReceipt2, IconBrandWhatsapp, IconBrain
+  IconPlus, IconSearch, IconEdit, IconReceipt2, IconBrandWhatsapp, IconBrain
 } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -150,7 +150,6 @@ export default function ClientesPage(): JSX.Element {
           <Group justify="space-between" align="flex-end">
             <div>
               <Title order={2} fw={800}>Gestión de Clientes</Title>
-              <Text size="sm" c="dimmed">Cartera de clientes y administración de cuentas corrientes</Text>
             </div>
             <Button leftSection={<IconPlus size={16} />} color="sap" onClick={() => { setSelected(null); formHandlers.open() }}>
               Nuevo Cliente

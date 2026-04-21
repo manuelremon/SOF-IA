@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { SimpleGrid, Paper, Group, Text, Title, Stack, Table, Box, Badge, Button } from '@mantine/core'
 import {
-  IconCash,
   IconShoppingCart,
   IconPackage,
-  IconAlertTriangle,
-  IconUsers,
   IconCalendar,
   IconReceipt2
 } from '@tabler/icons-react'
@@ -59,14 +56,13 @@ export default function DashboardPage(): JSX.Element {
           <Group justify="space-between" align="flex-end">
             <div>
               <Title order={2} fw={800}>Dashboard</Title>
-              <Text size="sm" c="dimmed">Resumen operativo y financiero de tu negocio</Text>
             </div>
           </Group>
           <PulseAlerts />
         </Stack>
       </Box>
 
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 5 }} gap="lg">
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 5 }} spacing="lg">
         {kpiCards.map((kpi) => (
           <Paper key={kpi.label} p="lg" radius="md">
             <Group justify="space-between" mb={12}>
@@ -90,7 +86,7 @@ export default function DashboardPage(): JSX.Element {
         ))}
       </SimpleGrid>
 
-      <SimpleGrid cols={{ base: 1, md: 2 }} gap="lg">
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
         <Paper p="lg">
           <Group justify="space-between" mb="md">
             <Text fw={700} size="lg">Tendencia de Ventas</Text>

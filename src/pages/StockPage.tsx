@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import {
   Title, Stack, Group, TextInput, Table, Badge, ActionIcon, Paper, Select,
-  Text, SimpleGrid, Card, Tabs, NumberInput, Button, Textarea, Modal, Tooltip, Box, rem
+  Text, SimpleGrid, NumberInput, Button, Textarea, Modal, Tooltip, Box
 } from '@mantine/core'
 import {
   IconSearch, IconAdjustmentsAlt, IconAlertTriangle, IconPackage,
-  IconArrowUp, IconArrowDown, IconClipboardCheck
+  IconClipboardCheck
 } from '@tabler/icons-react'
 import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
@@ -131,7 +131,6 @@ export default function StockPage(): JSX.Element {
         <Stack gap="lg">
           <div>
             <Title order={2} fw={800}>Control de Inventario</Title>
-            <Text size="sm" c="dimmed">Seguimiento de existencias, ajustes y auditoría de stock</Text>
           </div>
 
           <Group gap="md">
@@ -167,7 +166,7 @@ export default function StockPage(): JSX.Element {
       </Box>
 
       {/* KPIs */}
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} gap="lg">
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg">
         <Paper p="md" radius="md">
           <Group justify="space-between" mb={4}>
             <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.5px' }}>Productos</Text>

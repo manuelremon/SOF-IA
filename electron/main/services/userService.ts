@@ -105,3 +105,40 @@ export function changePin(data: { id: number; currentPin: string; newPin: string
 
   return { success: true }
 }
+
+export function listBusinessesByUser(userId: number, role: string) {
+  const db = getDb()
+  if (role === 'admin') {
+    return db
+      .select()
+      .from(schema.businesses)
+      .where(eq(schema.businesses.isActive, true))
+      .all()
+  }
+
+  return db
+    .select({
+      id: schema.businesses.id,
+      name: schema.businesses.name,
+      description: schema.businesses.description,
+      industry: schema.businesses.industry,
+      logoPath: schema.businesses.logoPath
+    })
+    .from(schema.businesses)
+    .innerJoin(schema.userBusinesses, eq(schema.businesses.id, schema.userBusinesses.businessId))
+    .where(sql`${schema.userBusinesses.userId} = ${userId} AND ${schema.businesses.isActive} = 1`)
+    .all()
+}
+
+export function createBusiness(data: { name: string; description?: string; industry?: string }) {
+  const db = getDb()
+  return db
+    .insert(schema.businesses)
+    .values({
+      name: data.name,
+      description: data.description,
+      industry: data.industry
+    })
+    .returning()
+    .get()
+}

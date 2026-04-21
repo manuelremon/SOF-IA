@@ -3,9 +3,8 @@ import {
   Table, ActionIcon, NumberInput, Text, Group, Paper, Button, Stack,
   Popover, SegmentedControl, Badge, Tooltip
 } from '@mantine/core'
-import { IconTrash, IconDiscount, IconFlame, IconScale } from '@tabler/icons-react'
+import { IconTrash, IconDiscount, IconFlame, IconScale, IconBarcode } from '@tabler/icons-react'
 import { useCartStore } from '../../stores/cartStore'
-import { notifications } from '@mantine/notifications'
 import type { DiscountType } from '../../types'
 
 const fmt = (n: number) =>
@@ -13,6 +12,7 @@ const fmt = (n: number) =>
 
 interface CartProps {
   onPay: () => void
+  onCameraOpen?: () => void
 }
 
 function ItemDiscountPopover({ productId, currentType, currentValue }: {
@@ -67,7 +67,7 @@ function ItemDiscountPopover({ productId, currentType, currentValue }: {
   )
 }
 
-export default function Cart({ onPay }: CartProps): JSX.Element {
+export default function Cart({ onPay, onCameraOpen }: CartProps): JSX.Element {
   const { 
     items, 
     removeItem, 
@@ -85,25 +85,40 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
   const profit = getEstimatedProfit()
   const marginColor = marginPercent > 25 ? 'green' : marginPercent > 10 ? 'yellow' : 'red'
 
+
   return (
-    <Paper withBorder p="md" h="100%" bg="gray.0" style={{ borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
+    <Paper withBorder p="md" h="100%" style={{ borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
       <Stack justify="space-between" h="100%" gap="md">
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <Group justify="space-between" mb="md">
-            <Group gap="xs">
+          <Group justify="space-between" mb="md" wrap="nowrap">
+            <Group gap="xs" style={{ flexShrink: 0 }}>
               <IconFlame size={24} color="var(--mantine-color-blue-filled)" />
               <Text fw={800} size="xl" c="blue.9" style={{ letterSpacing: '-0.5px' }}>
                 CARRITO
               </Text>
             </Group>
-            <Badge size="lg" variant="filled" color="blue.9" radius="sm">
-              {items.reduce((acc, item) => acc + item.quantity, 0)} UNIDADES
+
+            <Tooltip label="Activar escáner">
+              <ActionIcon 
+                variant="light" 
+                color="blue.9" 
+                size="lg" 
+                radius="md" 
+                onClick={onCameraOpen}
+                style={{ border: '1px solid var(--mantine-color-blue-2)' }}
+              >
+                <IconBarcode size={22} />
+              </ActionIcon>
+            </Tooltip>
+
+            <Badge size="lg" variant="filled" color="blue.9" radius="sm" style={{ flexShrink: 0 }}>
+              {items.reduce((acc, item) => acc + item.quantity, 0)} UN
             </Badge>
           </Group>
 
-          <Paper withBorder p={0} bg="white" style={{ borderRadius: '8px', overflow: 'auto', flex: 1 }}>
+          <Paper withBorder p={0} style={{ borderRadius: '8px', overflow: 'auto', flex: 1 }}>
             <Table highlightOnHover verticalSpacing="sm" stickyHeader>
-              <Table.Thead bg="gray.1">
+              <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Producto</Table.Th>
                   <Table.Th w={100} ta="center">Cant.</Table.Th>
@@ -124,10 +139,10 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
                   const total = gross - itemDiscount
                   
                   return (
-                    <Table.Tr key={item.id}>
+                    <Table.Tr key={item.productId}>
                       <Table.Td>
                         <Stack gap={2}>
-                          <Text fw={600} size="sm" lineClamp={1}>{item.name}</Text>
+                          <Text fw={600} size="sm" lineClamp={1}>{item.productName}</Text>
                           {itemDiscount > 0 && (
                             <Badge size="xs" color="orange" variant="light" w="fit-content">
                               -{item.discountType === 'porcentaje' ? `${item.discountValue}%` : fmt(item.discountValue!)}
@@ -138,7 +153,7 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
                       <Table.Td>
                         <NumberInput
                           value={item.quantity}
-                          onChange={(v) => updateQuantity(item.id, Number(v) || 0)}
+                          onChange={(v) => updateQuantity(item.productId, Number(v) || 0)}
                           size="sm"
                           min={0.1}
                           w={80}
@@ -154,11 +169,11 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
                       <Table.Td>
                         <Group gap={4} justify="flex-end" wrap="nowrap">
                           <ItemDiscountPopover
-                            productId={item.id}
+                            productId={item.productId}
                             currentType={item.discountType}
                             currentValue={item.discountValue}
                           />
-                          <ActionIcon color="red" variant="subtle" onClick={() => removeItem(item.id)}>
+                          <ActionIcon color="red" variant="subtle" onClick={() => removeItem(item.productId)}>
                             <IconTrash size={18} />
                           </ActionIcon>
                         </Group>
@@ -183,10 +198,10 @@ export default function Cart({ onPay }: CartProps): JSX.Element {
 
         <Stack gap="xs">
           {items.length > 0 && (
-            <Paper withBorder p="xs" bg="gray.0" style={{ borderStyle: 'dashed' }}>
+            <Paper withBorder p="xs" style={{ borderStyle: 'dashed' }}>
               <Group justify="space-between">
                 <Group gap={4}>
-                  <IconScale size={14} c={marginColor} />
+                  <IconScale size={14} color={marginColor === 'green' ? '#2f9e44' : marginColor === 'yellow' ? '#f59f00' : '#e03131'} />
                   <Text size="xs" c="dimmed">Margen est.:</Text>
                   <Text size="xs" fw={700} c={marginColor}>{marginPercent.toFixed(1)}%</Text>
                 </Group>

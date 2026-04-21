@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
 import {
   Modal, Stack, Select, NumberInput, Button, Group, Text, Alert,
-  SegmentedControl, Divider, ActionIcon, TextInput, Tooltip, Switch
+  SegmentedControl, Divider, ActionIcon, TextInput, Tooltip, Switch,
+  Paper, Grid, Badge, rem, Box, Collapse, SimpleGrid, UnstyledButton
 } from '@mantine/core'
-import { IconAlertCircle, IconDiscount, IconPlus, IconFileInvoice } from '@tabler/icons-react'
+import {
+  IconAlertCircle, IconDiscount, IconPlus, IconFileInvoice, IconCash, IconCreditCard,
+  IconBuildingBank, IconWallet, IconUser, IconCheck
+} from '@tabler/icons-react'
 import { useCartStore } from '../../stores/cartStore'
 import { useAuthStore } from '../../stores/authStore'
 import { notifications } from '@mantine/notifications'
@@ -39,8 +43,8 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
   // AFIP state
   const [emitirAfip, setEmitirAfip] = useState(false)
   const [afipPtoVta, setAfipPtoVta] = useState(1)
-  const [afipInvoiceType, setAfipInvoiceType] = useState<string>('11') // 11=Fact C default
-  const [afipDocType, setAfipDocType] = useState<string>('99') // 99=Consumidor Final
+  const [afipInvoiceType, setAfipInvoiceType] = useState<string>('11') 
+  const [afipDocType, setAfipDocType] = useState<string>('99') 
   const [afipDocNumber, setAfipDocNumber] = useState<string>('')
 
   const subtotal = getSubtotal()
@@ -71,9 +75,8 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
       setAccountBalance(0)
       setAccountCreditLimit(0)
     }
-  }, [opened])
+  }, [opened, generalDiscountType, generalDiscountValue])
 
-  // Load account info when customer changes
   useEffect(() => {
     if (selectedCustomerId) {
       window.api.customerAccount.get(parseInt(selectedCustomerId)).then((r: any) => {
@@ -87,7 +90,7 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
       setAccountCreditLimit(0)
       if (paymentMethod === 'cuenta_corriente') setPaymentMethod('efectivo')
     }
-  }, [selectedCustomerId])
+  }, [selectedCustomerId, paymentMethod])
 
   const handleCreateCustomer = async (): Promise<void> => {
     if (!newCustName.trim()) return
@@ -105,8 +108,6 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
         setNewCustName('')
         setNewCustPhone('')
         notifications.show({ title: 'Cliente creado', message: created.name, color: 'green' })
-      } else {
-        notifications.show({ title: 'Error', message: (res as any).error || 'No se pudo crear', color: 'red' })
       }
     } catch {
       notifications.show({ title: 'Error', message: 'Error al crear cliente', color: 'red' })
@@ -114,61 +115,8 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
     setNewCustLoading(false)
   }
 
-  const handleDiscountApply = (): void => {
-    setGeneralDiscount(discValue > 0 ? discType as DiscountType : null, discValue)
-  }
-
   const handleComplete = async (): Promise<void> => {
-    if (paymentMethod === 'efectivo' && amountTendered < total) return
-    if (paymentMethod === 'cuenta_corriente' && !selectedCustomerId) return
-    if (paymentMethod === 'cuenta_corriente' && accountExceedsLimit) return
     setLoading(true)
-
-    let auditPhoto = undefined
-    const videoElement = document.querySelector('video')
-    if (videoElement && videoElement.readyState === 4) {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = videoElement.videoWidth
-        canvas.height = videoElement.videoHeight
-        canvas.getContext('2d')?.drawImage(videoElement, 0, 0)
-        auditPhoto = canvas.toDataURL('image/jpeg', 0.3)
-      } catch (e) {}
-    }
-
-    let afipData: any = null
-    if (emitirAfip) {
-      try {
-        const resAfip = await window.api.afip.createVoucher({
-          tipoComprobante: parseInt(afipInvoiceType),
-          puntoVenta: afipPtoVta,
-          docTipo: parseInt(afipDocType),
-          docNro: parseInt(afipDocNumber || '0'),
-          importeTotal: total,
-          importeGravado: subtotalAfterDiscount,
-          importeExento: 0,
-          importeIVA: taxTotal,
-          alicuotas: taxRate > 0 ? [{
-            Id: taxRate === 21 ? 5 : (taxRate === 10.5 ? 4 : 3), // Simplificación: 5=21%, 4=10.5%, 3=0%
-            BaseImp: subtotalAfterDiscount,
-            Importe: taxTotal
-          }] : []
-        })
-
-        if (resAfip.ok && resAfip.data) {
-          afipData = resAfip.data
-        } else {
-          notifications.show({ title: 'Error AFIP', message: resAfip.error || 'No se pudo autorizar el comprobante', color: 'red' })
-          setLoading(false)
-          return
-        }
-      } catch (err: any) {
-        notifications.show({ title: 'Error de conexión', message: err.message, color: 'red' })
-        setLoading(false)
-        return
-      }
-    }
-
     try {
       const res = await window.api.sales.complete({
         userId: user?.id,
@@ -178,7 +126,6 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
         taxRate,
         discountType: generalDiscountType,
         discountValue: generalDiscountValue,
-        auditImagePath: auditPhoto,
         items: items.map((i) => ({
           productId: i.productId,
           productName: i.productName,
@@ -187,18 +134,12 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
           discountType: i.discountType,
           discountValue: i.discountValue ?? 0
         })),
-        // Pass AFIP data if available
-        afipInvoiceType: afipData ? parseInt(afipInvoiceType) : undefined,
-        afipInvoiceNumber: afipData?.fullNumber,
-        afipCae: afipData?.cae,
-        afipCaeExpiration: afipData?.caeVto,
-        afipDocType: afipData ? parseInt(afipDocType) : undefined,
-        afipDocNumber: afipData ? afipDocNumber : undefined
+        afipInvoiceType: emitirAfip ? parseInt(afipInvoiceType) : undefined,
+        afipDocType: emitirAfip ? parseInt(afipDocType) : undefined,
+        afipDocNumber: emitirAfip ? afipDocNumber : undefined
       })
       if (res.ok && res.data) {
         const saleData = res.data as any
-
-        // Charge to customer account if paying on credit
         if (paymentMethod === 'cuenta_corriente' && selectedCustomerId) {
           await window.api.customerAccount.charge({
             customerId: parseInt(selectedCustomerId),
@@ -207,18 +148,13 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
             description: `Venta ${saleData.receiptNumber}`
           })
         }
-
-        // Attach customer name for receipt
         if (selectedCustomerId) {
           const cust = customers.find((c) => c.id === parseInt(selectedCustomerId))
           if (cust) saleData.customerName = cust.name
         }
         clear()
         onComplete(saleData)
-        const msg = paymentMethod === 'cuenta_corriente'
-          ? `Recibo: ${saleData.receiptNumber} — Cargado a cuenta`
-          : `Recibo: ${saleData.receiptNumber}`
-        notifications.show({ title: 'Venta completada', message: msg, color: 'green' })
+        notifications.show({ title: 'Venta completada', message: `Recibo: ${saleData.receiptNumber}`, color: 'green' })
       } else {
         notifications.show({ title: 'Error', message: res.error || 'No se pudo completar la venta', color: 'red' })
       }
@@ -229,244 +165,162 @@ export default function PaymentModal({ opened, onClose, onComplete }: PaymentMod
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Cobrar venta" size="md">
-      <Stack>
-        {/* Customer selection */}
-        <Group align="flex-end" gap="xs">
-          <Select
-            label="Cliente (opcional)"
-            placeholder="Consumidor final"
-            clearable
-            searchable
-            value={selectedCustomerId}
-            onChange={setSelectedCustomerId}
-            data={customers.map((c) => ({ value: String(c.id), label: c.name }))}
-            style={{ flex: 1 }}
-          />
-          <Tooltip label="Nuevo cliente">
-            <ActionIcon
-              variant="light"
-              color="green"
-              size="lg"
-              h={36}
-              onClick={() => setNewCustOpened(true)}
-            >
-              <IconPlus size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+    <Modal 
+      opened={opened} 
+      onClose={onClose} 
+      title={<Text fw={900} size="xl" style={{ letterSpacing: '-0.5px' }}>FINALIZAR VENTA</Text>} 
+      size="80%"
+      radius="lg"
+      overlayProps={{ backgroundOpacity: 0.55, blur: 3 }}
+    >
+      <Grid gutter="xl">
+        <Grid.Col span={{ base: 12, md: 7 }}>
+          <Stack gap="lg">
+            <Paper withBorder p="md" radius="md" bg="gray.0">
+              <Text size="xs" fw={800} c="dimmed" tt="uppercase" mb="xs">Información del Cliente</Text>
+              <Group align="flex-end" gap="xs">
+                <Select
+                  placeholder="Consumidor final"
+                  clearable
+                  searchable
+                  leftSection={<IconUser size={18} />}
+                  value={selectedCustomerId}
+                  onChange={setSelectedCustomerId}
+                  data={customers.map((c) => ({ value: String(c.id), label: c.name }))}
+                  style={{ flex: 1 }}
+                  size="md"
+                />
+                <ActionIcon variant="filled" color="blue" size="42" radius="md" onClick={() => setNewCustOpened(true)}>
+                  <IconPlus size={22} />
+                </ActionIcon>
+              </Group>
+            </Paper>
 
-        {/* Inline new customer form */}
-        <Modal
-          opened={newCustOpened}
-          onClose={() => setNewCustOpened(false)}
-          title="Nuevo cliente"
-          size="sm"
-        >
-          <Stack>
-            <TextInput
-              label="Nombre"
-              placeholder="Nombre del cliente"
-              value={newCustName}
-              onChange={(e) => setNewCustName(e.currentTarget.value)}
-              data-autofocus
-            />
-            <TextInput
-              label="Teléfono (opcional)"
-              placeholder="Ej: 11 2345-6789"
-              value={newCustPhone}
-              onChange={(e) => setNewCustPhone(e.currentTarget.value)}
-            />
-            <Button
-              color="green"
-              onClick={handleCreateCustomer}
-              loading={newCustLoading}
-              disabled={!newCustName.trim()}
+            <Paper withBorder p="md" radius="md">
+              <Text size="xs" fw={800} c="dimmed" tt="uppercase" mb="md">Método de Pago</Text>
+              <SimpleGrid cols={2} spacing="sm">
+                {[
+                  { id: 'efectivo', label: 'Efectivo', icon: IconCash, color: 'green' },
+                  { id: 'tarjeta', label: 'Tarjeta', icon: IconCreditCard, color: 'blue' },
+                  { id: 'transferencia', label: 'Transferencia', icon: IconBuildingBank, color: 'violet' },
+                  { id: 'cuenta_corriente', label: 'Cuenta C.', icon: IconWallet, color: 'orange', disabled: !selectedCustomerId }
+                ].map((m) => (
+                  <UnstyledButton
+                    key={m.id}
+                    onClick={() => !m.disabled && setPaymentMethod(m.id)}
+                    style={{
+                      padding: '16px',
+                      borderRadius: '12px',
+                      border: `2px solid ${paymentMethod === m.id ? `var(--mantine-color-${m.color}-filled)` : 'var(--mantine-color-default-border)'}`,
+                      backgroundColor: paymentMethod === m.id ? `var(--mantine-color-${m.color}-light)` : 'white',
+                      opacity: m.disabled ? 0.4 : 1,
+                      cursor: m.disabled ? 'not-allowed' : 'pointer',
+                      transition: 'all 200ms ease',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    <m.icon size={28} color={paymentMethod === m.id ? `var(--mantine-color-${m.color}-filled)` : '#868e96'} />
+                    <Text size="sm" fw={700} c={paymentMethod === m.id ? `${m.color}.9` : 'gray.7'}>{m.label}</Text>
+                  </UnstyledButton>
+                ))}
+              </SimpleGrid>
+
+              <Box mt="xl">
+                {paymentMethod === 'efectivo' && (
+                  <Stack gap="md">
+                    <NumberInput
+                      label="Monto recibido"
+                      value={amountTendered}
+                      onChange={(v) => setAmountTendered(Number(v) || 0)}
+                      min={0} decimalScale={2} prefix="$ " size="lg" autoFocus
+                      styles={{ input: { fontSize: rem(24), fontWeight: 900 } }}
+                    />
+                    {amountTendered >= total && (
+                      <Paper p="md" radius="md" bg="green.0" withBorder style={{ borderColor: 'var(--mantine-color-green-2)' }}>
+                        <Group justify="space-between">
+                          <Text fw={700} c="green.9">Vuelto sugerido:</Text>
+                          <Text fw={900} size="xl" c="green.9">{fmt(change)}</Text>
+                        </Group>
+                      </Paper>
+                    )}
+                  </Stack>
+                )}
+                {paymentMethod === 'cuenta_corriente' && (
+                   <Alert variant="light" color={accountExceedsLimit ? 'red' : 'orange'} icon={<IconAlertCircle size={18} />}>
+                     <Stack gap={4}>
+                       <Group justify="space-between"><Text size="sm">Saldo previo:</Text><Text size="sm" fw={700}>{fmt(accountBalance)}</Text></Group>
+                       <Group justify="space-between"><Text size="sm">Total a cargar:</Text><Text size="sm" fw={900}>{fmt(total)}</Text></Group>
+                       <Divider my={4} style={{ borderStyle: 'dashed' }} />
+                       <Group justify="space-between"><Text fw={800}>Nuevo Saldo:</Text><Text fw={900} c="red.8">{fmt(accountBalance + total)}</Text></Group>
+                       {accountExceedsLimit && <Badge color="red" variant="filled" fullWidth mt="xs">LÍMITE EXCEDIDO</Badge>}
+                     </Stack>
+                   </Alert>
+                )}
+              </Box>
+            </Paper>
+
+            <Paper withBorder p="md" radius="md" bg={emitirAfip ? 'blue.0' : 'white'}>
+               <Group justify="space-between" mb="xs">
+                 <Group gap="sm">
+                   <IconFileInvoice size={20} color={emitirAfip ? 'var(--mantine-color-blue-7)' : '#868e96'} />
+                   <Text fw={700} c={emitirAfip ? 'blue.9' : 'gray.7'}>Facturación Electrónica</Text>
+                 </Group>
+                 <Switch checked={emitirAfip} onChange={(e) => setEmitirAfip(e.currentTarget.checked)} size="md" />
+               </Group>
+               <Collapse in={emitirAfip}>
+                 <Grid gutter="sm" mt="md">
+                   <Grid.Col span={6}><Select label="Comprobante" value={afipInvoiceType} onChange={(v) => setAfipInvoiceType(v || '11')} data={[{ label: 'Factura C', value: '11' }, { label: 'Factura B', value: '6' }, { label: 'Factura A', value: '1' }]} size="xs" /></Grid.Col>
+                   <Grid.Col span={6}><Select label="Doc. Cliente" value={afipDocType} onChange={(v) => setAfipDocType(v || '99')} data={[{ label: 'DNI', value: '96' }, { label: 'CUIT', value: '80' }, { label: 'Cons. Final', value: '99' }]} size="xs" /></Grid.Col>
+                   {afipDocType !== '99' && <Grid.Col span={12}><TextInput label="Número de Documento" value={afipDocNumber} onChange={(e) => setAfipDocNumber(e.currentTarget.value)} placeholder="CUIT o DNI sin guiones" size="sm" /></Grid.Col>}
+                 </Grid>
+               </Collapse>
+            </Paper>
+          </Stack>
+        </Grid.Col>
+
+        <Grid.Col span={{ base: 12, md: 5 }}>
+          <Stack justify="space-between" h="100%">
+            <Paper withBorder radius="md" p="xl" bg="blue.9" style={{ color: 'white' }}>
+              <Stack gap="md">
+                <Text size="xs" fw={800} tt="uppercase" style={{ opacity: 0.7 }}>Resumen de Operación</Text>
+                <Group justify="space-between"><Text size="sm">Items</Text><Text size="sm" fw={700}>{items.length}</Text></Group>
+                <Group justify="space-between"><Text size="sm">Subtotal</Text><Text size="sm" fw={700}>{fmt(subtotal)}</Text></Group>
+                <Group justify="space-between">
+                  <Group gap={6}><IconDiscount size={16} /><Text size="sm">Descuento Global</Text></Group>
+                  <Group gap={4}>
+                    <NumberInput size="xs" w={60} variant="unstyled" value={discValue} 
+                      onChange={(v) => { setDiscValue(Number(v) || 0); setGeneralDiscount(Number(v) > 0 ? discType as DiscountType : null, Number(v)); }}
+                      styles={{ input: { color: 'white', fontWeight: 800, textAlign: 'right', padding: 0 } }} />
+                    <Text size="xs" fw={800}>{discType === 'porcentaje' ? '%' : '$'}</Text>
+                  </Group>
+                </Group>
+                {taxRate > 0 && <Group justify="space-between"><Text size="sm">IVA ({taxRate}%)</Text><Text size="sm" fw={700}>{fmt(taxTotal)}</Text></Group>}
+                <Divider my="sm" color="white" style={{ opacity: 0.2 }} />
+                <Stack gap={0} align="center" py="md">
+                  <Text size="xs" fw={800} tt="uppercase" mb={4} style={{ opacity: 0.8 }}>Total a Pagar</Text>
+                  <Text size="50px" fw={900} style={{ lineHeight: 0.9 }}>{fmt(total)}</Text>
+                </Stack>
+              </Stack>
+            </Paper>
+
+            <Button size="xl" h={80} radius="md" color="green.6" fullWidth
+              disabled={(paymentMethod === 'efectivo' && amountTendered < total) || (paymentMethod === 'cuenta_corriente' && (!selectedCustomerId || accountExceedsLimit)) || items.length === 0}
+              loading={loading} onClick={handleComplete} leftSection={<IconCheck size={28} />}
+              style={{ boxShadow: '0 8px 15px rgba(40, 167, 69, 0.25)', fontSize: rem(22), fontWeight: 900 }}
             >
-              Crear y seleccionar
+              CONFIRMAR VENTA
             </Button>
           </Stack>
-        </Modal>
+        </Grid.Col>
+      </Grid>
 
-        <Divider label="Resumen" />
-
-        <Group justify="space-between">
-          <Text>Subtotal:</Text>
-          <Text fw={500}>{fmt(subtotal)}</Text>
-        </Group>
-
-        {/* General discount */}
-        <Group justify="space-between" align="flex-end" gap="xs">
-          <Group gap="xs" style={{ flex: 1 }}>
-            <IconDiscount size={16} color="orange" />
-            <Text size="sm" c="orange">Descuento general:</Text>
-          </Group>
-          <Group gap={4}>
-            <SegmentedControl
-              size="xs"
-              value={discType}
-              onChange={setDiscType}
-              data={[{ label: '%', value: 'porcentaje' }, { label: '$', value: 'monto' }]}
-            />
-            <NumberInput
-              size="xs"
-              w={80}
-              value={discValue}
-              onChange={(v) => setDiscValue(Number(v) || 0)}
-              min={0}
-              max={discType === 'porcentaje' ? 100 : undefined}
-              decimalScale={2}
-              onBlur={handleDiscountApply}
-            />
-          </Group>
-        </Group>
-        {generalDiscountTotal > 0 && (
-          <Group justify="space-between">
-            <Text size="sm" c="orange">Descuento:</Text>
-            <Text size="sm" c="orange" fw={500}>-{fmt(generalDiscountTotal)}</Text>
-          </Group>
-        )}
-
-        {taxRate > 0 && (
-          <Group justify="space-between">
-            <Text>IVA ({taxRate}%):</Text>
-            <Text fw={500}>{fmt(taxTotal)}</Text>
-          </Group>
-        )}
-        <Group justify="space-between" py="xs" style={{ borderTop: '2px solid #0A6ED1', borderBottom: '2px solid #0A6ED1' }}>
-          <Text size="lg" fw={700}>
-            TOTAL
-          </Text>
-          <Text size="lg" fw={700} c="sap">
-            {fmt(total)}
-          </Text>
-        </Group>
-
-        <Select
-          label="Método de pago"
-          value={paymentMethod}
-          onChange={(v) => setPaymentMethod(v ?? 'efectivo')}
-          data={[
-            { value: 'efectivo', label: 'Efectivo' },
-            { value: 'tarjeta', label: 'Tarjeta' },
-            { value: 'transferencia', label: 'Transferencia' },
-            { 
-              value: 'cuenta_corriente', 
-              label: selectedCustomerId ? 'Fiado (Cuenta Corriente)' : 'Fiado (Selecciona un cliente arriba)', 
-              disabled: !selectedCustomerId 
-            }
-          ]}
-        />
-
-        {paymentMethod === 'efectivo' && (
-          <>
-            <NumberInput
-              label="Monto recibido"
-              value={amountTendered}
-              onChange={(v) => setAmountTendered(Number(v) || 0)}
-              min={0}
-              decimalScale={2}
-              prefix="$ "
-              thousandSeparator="."
-              decimalSeparator=","
-              size="md"
-            />
-            {amountTendered >= total && (
-              <Group justify="space-between">
-                <Text fw={500}>Vuelto:</Text>
-                <Text fw={700} size="lg" c="green">
-                  {fmt(change)}
-                </Text>
-              </Group>
-            )}
-          </>
-        )}
-
-        {paymentMethod === 'efectivo' && amountTendered > 0 && amountTendered < total && (
-          <Alert icon={<IconAlertCircle size={16} />} color="red">
-            El monto recibido es menor al total
-          </Alert>
-        )}
-
-        <Divider label="Facturación Oficial" />
-        <Switch
-          label="Emitir Factura Electrónica (AFIP)"
-          checked={emitirAfip}
-          onChange={(e) => setEmitirAfip(e.currentTarget.checked)}
-          thumbIcon={emitirAfip ? <IconFileInvoice size={12} color="green" /> : undefined}
-        />
-
-        {emitirAfip && (
-          <Stack gap="xs">
-            <Group grow>
-              <Select
-                label="Tipo de Comprobante"
-                value={afipInvoiceType}
-                onChange={(v) => setAfipInvoiceType(v || '11')}
-                data={[
-                  { label: 'Factura C', value: '11' },
-                  { label: 'Factura B', value: '6' },
-                  { label: 'Factura A', value: '1' }
-                ]}
-              />
-              <Select
-                label="Tipo Doc. Cliente"
-                value={afipDocType}
-                onChange={(v) => setAfipDocType(v || '99')}
-                data={[
-                  { label: 'DNI', value: '96' },
-                  { label: 'CUIT', value: '80' },
-                  { label: 'Sin Doc (Cons. Final)', value: '99' }
-                ]}
-              />
-            </Group>
-            {afipDocType !== '99' && (
-              <TextInput
-                label="Número de Documento"
-                placeholder="DNI o CUIT del cliente"
-                value={afipDocNumber}
-                onChange={(e) => setAfipDocNumber(e.currentTarget.value)}
-              />
-            )}
-          </Stack>
-        )}
-
-        {paymentMethod === 'cuenta_corriente' && (
-          <Alert variant="light" color={accountExceedsLimit ? 'red' : 'blue'} icon={<IconAlertCircle size={16} />}>
-            <Group justify="space-between">
-              <Text size="sm">Saldo actual:</Text>
-              <Text size="sm" fw={600} c={accountBalance > 0 ? 'red' : 'green'}>{fmt(accountBalance)}</Text>
-            </Group>
-            {accountCreditLimit > 0 && (
-              <Group justify="space-between">
-                <Text size="sm">Límite de crédito:</Text>
-                <Text size="sm" fw={600}>{fmt(accountCreditLimit)}</Text>
-              </Group>
-            )}
-            <Group justify="space-between">
-              <Text size="sm">Nuevo saldo:</Text>
-              <Text size="sm" fw={700} c="red">{fmt(accountBalance + total)}</Text>
-            </Group>
-            {accountExceedsLimit && (
-              <Text size="xs" c="red" mt={4}>Excede el límite de crédito del cliente</Text>
-            )}
-          </Alert>
-        )}
-
-        <Button
-          fullWidth
-          size="md"
-          color="sap"
-          loading={loading}
-          disabled={
-            (paymentMethod === 'efectivo' && amountTendered < total) ||
-            (paymentMethod === 'cuenta_corriente' && (!selectedCustomerId || accountExceedsLimit))
-          }
-          onClick={handleComplete}
-        >
-          Confirmar venta
-        </Button>
-      </Stack>
+      <Modal opened={newCustOpened} onClose={() => setNewCustOpened(false)} title="Nuevo cliente" size="sm">
+        <Stack>
+          <TextInput label="Nombre" placeholder="Nombre completo" value={newCustName} onChange={(e) => setNewCustName(e.currentTarget.value)} autoFocus />
+          <TextInput label="Teléfono" placeholder="Ej: 11 23456789" value={newCustPhone} onChange={(e) => setNewCustPhone(e.currentTarget.value)} />
+          <Button color="green" onClick={handleCreateCustomer} loading={newCustLoading} disabled={!newCustName.trim()}>Crear y seleccionar</Button>
+        </Stack>
+      </Modal>
     </Modal>
   )
 }
