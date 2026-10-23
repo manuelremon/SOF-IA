@@ -67,6 +67,8 @@ export async function createVoucher(data: AfipVoucherData) {
     Concepto: 1, // 1=Productos, 2=Servicios, 3=Productos y Servicios
     DocTipo: data.docTipo,
     DocNro: data.docNro,
+    // parche: 5 = Consumidor Final solo si DocTipo es 99; con otro DocTipo falta la condición frente al IVA del cliente
+    ...(Number(data.docTipo) === 99 ? { CondicionIVAReceptorId: 5 } : {}),
     CbteDesde: nextVoucher,
     CbteHasta: nextVoucher,
     CbteFch: date,
